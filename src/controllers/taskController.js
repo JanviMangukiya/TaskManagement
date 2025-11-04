@@ -44,39 +44,72 @@ const createTask = async(req,res) => {
 const getAllTasks = async(req, res) => {
     try {
         const limit = parseInt(req?.query?.limit || 5);
-        const skip = parseInt(req?.query?.skip || 0);
-        let filter = { isDeleted: false };
+        const page = parseInt(req?.query?.page || 1);
 
-        const { taskName, priority, assignDate, dueDate, status } = req.query;
+        const offset = (page - 1) * limit;
+        let filter = { isDeleted: false };
+        let sortTask = {};
+        let search = {};
+        const { searchObj, sortObj } = req.query;
+
+        if(searchObj) {
+            try {
+                search = JSON.parse(searchObj);
+                if(search.name == 'taskName' || search.name == 'priority') {
+                    filter[search.name] = { $regex: search.value, $options: 'i' };
+                }
+                if(search.name == 'assignDate' || search.name == 'dueDate') {
+                    filter[search.name] = new Date(search.value);
+                }
+            } catch (error) {
+                return errorHandle('', res, "Invalid Search Object", 400, error.message);
+            }
+        }
  
-        if (taskName) {
-            filter.taskName = { $regex: taskName, $options: 'i'} 
-        }
-        if (priority) {
-            filter.priority = { $regex: priority, $options: 'i'} 
-        }
-        if (assignDate) {
-            filter.assignDate = { $regex: assignDate, $options: 'i' }
-        }
-        if (dueDate) {
-            filter.dueDate = { $regex: dueDate, $options: 'i'}
-        }
-        if (status) {
-            filter['status.statusName']  = { $regex: status, $options: 'i'} 
+        if(sortObj) {
+            try {
+                const sort = JSON.parse(sortObj);
+                if(sort.name && sort.order) {
+                    sortTask[sort.name] = sort.order == "ASC" ? 1 : -1;
+                } else {
+                    return errorHandle('', res, "Invalid Sort Object Properties", 400, error.message);
+                }
+            } catch (error) {
+                return errorHandle('', res, "Invalid Sort Object", 400, error.message);
+            }
         }
 
         try {
-            const tasks = await Task.find(filter)
-            .skip(skip)
-            .limit(limit)
-            .populate({
-                path: 'status',
-                populate: {
-                    path: 'statusId',
-                    select: 'statusName'
-                }
-            });
-            return successHandle('', res, "Tasks Retrieved Successfully", 200, tasks);
+            let tasks = await Task.find(filter).sort(sortTask);
+
+            tasks = await Promise.all(tasks.map(async (task) => {
+                return await Task.populate(task, {
+                    path: 'status',
+                    options: { sort: { createdAt: -1 }, limit: 1 },
+                    populate: {
+                        path: 'statusId',
+                        select: 'statusName',
+                    }
+                });
+            }));
+
+            if(search?.name === 'statusName') {
+                tasks = tasks.filter(task => 
+                    task.status[0]?.statusId?.statusName === search.value
+                );
+            }
+
+            const totalRecord = tasks.length;
+            const totalPage = Math.ceil(totalRecord / limit);
+            tasks = tasks.slice(offset, offset + limit);
+            
+            const paginationInfo = {
+                totalRecord: totalRecord,
+                currentPage: page,
+                limit: limit,
+                totalPage
+            };  
+            return successHandle('', res, "Tasks Retrieved Successfully", 200, { paginationInfo, tasks });
         } catch (error) {
             return errorHandle('', res, "Task Not Found", 404, error.message);
         }   
@@ -90,6 +123,7 @@ const getByIdTask = async(req, res) => {
         const tasks = await Task.findById( req.params.id )
         .populate({
             path: 'status',
+            options: { sort: { createdAt: -1 }, limit: 1 },
             populate: {
                 path: 'statusId',
                 select: 'statusName'
