@@ -5,7 +5,7 @@ const path = require('path');
 
 const createTask = async(req,res) => {
     try {
-        const { taskName, description, priority, userId, statusId, assignDate, dueDate, status } = req.body;
+        const { taskName, description, priority, userId, statusId, assignDate, dueDate } = req.body;
         
         try {
             const existingTask = await Task.findOne({ taskName });
@@ -45,6 +45,9 @@ const getAllTasks = async(req, res) => {
     try {
         const limit = parseInt(req?.query?.limit || 5);
         const page = parseInt(req?.query?.page || 1);
+        if (page < 1 || limit < 1) {
+            return errorHandle('', res, "Page must be >= 1 and limit must be > 0", 400, '');
+        }
 
         const offset = (page - 1) * limit;
         let filter = { isDeleted: false };
@@ -81,17 +84,24 @@ const getAllTasks = async(req, res) => {
 
         try {
             let tasks = await Task.find(filter).sort(sortTask);
-
-            tasks = await Promise.all(tasks.map(async (task) => {
-                return await Task.populate(task, {
-                    path: 'status',
-                    options: { sort: { createdAt: -1 }, limit: 1 },
-                    populate: {
-                        path: 'statusId',
-                        select: 'statusName',
+            try { 
+                tasks = await Promise.all(tasks.map(async (task) => {
+                    try {
+                        return await Task.populate(task, {
+                            path: 'status',
+                            options: { sort: { createdAt: -1 }, limit: 1 },
+                            populate: {
+                                path: 'statusId',
+                                select: 'statusName',
+                            }
+                        });
+                    } catch (error) {
+                        return errorHandle('', res, "Error Populating Task", 500, error.message);
                     }
-                });
-            }));
+                }));
+            } catch (error) {
+                return errorHandle('', res, "Error Populating Task", 500, error.message);
+            }
 
             if(search?.name === 'statusName') {
                 tasks = tasks.filter(task => 
@@ -139,12 +149,15 @@ const updateTask = async(req, res) => {
     try {
         const { id } = req.params;
         const updateData = req.body;
-
-        const updatedTask = await Task.findByIdAndUpdate(id, updateData);
-        if (!updatedTask) {
-            return errorHandle('', res, "Task Not Found", 404, '');
+        try {
+            const updatedTask = await Task.findByIdAndUpdate(id, updateData);
+            if (!updatedTask) {
+                return errorHandle('', res, "Task Not Found", 404, '');
+            }
+            return successHandle('', res, "Task Updated Successfully", 200, updatedTask);
+        } catch (error) {
+            return errorHandle('', res, "Error Updating Task", 500, error.message);
         }
-        return successHandle('', res, "Task Updated Successfully", 200, updatedTask);
     }               
     catch (error) {
         return errorHandle('', res, "Error Updating Task", 500, error.message);
@@ -155,18 +168,25 @@ const updateTaskStatus = async(req, res) => {
     try {
         const { id } = req.params;
         const { statusId } = req.body;
-
-        const updatedStatus = await TaskStatusMap.create({
-            taskId: id,
-            statusId: statusId 
-        });
-        await Task.findByIdAndUpdate( id, { 
-            $push: { status: updatedStatus } 
-        });
-        if (!updatedStatus) {
-            return errorHandle('', res, "Task Status Not Found", 404, '');
+        try {
+            const updatedStatus = await TaskStatusMap.create({
+                taskId: id,
+                statusId: statusId 
+            });
+            try {
+                await Task.findByIdAndUpdate( id, { 
+                    $push: { status: updatedStatus } 
+                });
+            } catch (error) {
+                return errorHandle('', res, "Error Updating Task Status", 500, error.message);
+            }
+            if (!updatedStatus) {
+                return errorHandle('', res, "Task Status Not Found", 404, '');
+            }
+            return successHandle('', res, "Task Status Updated Successfully", 200, updatedStatus);
+        } catch (error) {
+            return errorHandle('', res, "Error Updating Task Status", 500, error.message);
         }
-        return successHandle('', res, "Task Status Updated Successfully", 200, updatedStatus);
     } catch (error) {
         return errorHandle('', res, "Error Updating Task Status", 500, error.message);
     }
@@ -175,16 +195,20 @@ const updateTaskStatus = async(req, res) => {
 const getTaskStatusHistory = async(req, res) => {
     try {
         const { id } = req.params;
-        const statusHistory = await TaskStatusMap.find({ taskId: id })
-        .populate({
-            path: 'statusId',
-            select: 'statusName'
-        })
-        .populate({
-            path: 'taskId',
-            select: 'taskName'
-        });
-        return successHandle('', res, "Task Status History", 200, statusHistory);
+        try {
+            const statusHistory = await TaskStatusMap.find({ taskId: id })
+            .populate({
+                path: 'statusId',
+                select: 'statusName'
+            })
+            .populate({
+                path: 'taskId',
+                select: 'taskName'
+            });
+            return successHandle('', res, "Task Status History", 200, statusHistory);
+        } catch (error) {
+            return errorHandle('', res, "Error in Task Status History", 500, error.message);
+        }
     } catch (error) {
         return errorHandle('', res, "Error in Task Status History", 500, error.message);
     }
@@ -193,11 +217,15 @@ const getTaskStatusHistory = async(req, res) => {
 const deleteTask = async(req, res) => {
     try {
         const { id } = req.params;
-        const deletedTask = await Task.findByIdAndUpdate(id, { isDeleted: true });
-        if (!deletedTask) {
-            return errorHandle('', res, "Task Not Found", 404, '');
+        try {
+            const deletedTask = await Task.findByIdAndUpdate(id, { isDeleted: true });
+            if (!deletedTask) {
+                return errorHandle('', res, "Task Not Found", 404, '');
+            }
+            return successHandle('', res, "Task Deleted Successfully", 204, '');
+        } catch (error) {
+            return errorHandle('', res, "Error Deleting Task", 500, error.message);
         }
-        return successHandle('', res, "Task Deleted Successfully", 204, '');
     } catch (error) {
         return errorHandle('', res, "Error Deleting Task", 500, error.message);
     }
