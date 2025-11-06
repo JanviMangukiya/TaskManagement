@@ -1,6 +1,8 @@
+const cron = require('node-cron');
 const Task = require('../models/taskModel');
+const User = require('../models/userModel');
 const TaskStatusMap = require('../models/taskStatusMapModel');
-const { successHandle, errorHandle } = require('../helper/helper');
+const { successHandle, errorHandle, sendEmail } = require('../helper/helper');
 const path = require('path');
 
 const createTask = async(req,res) => {
@@ -10,10 +12,10 @@ const createTask = async(req,res) => {
         try {
             const existingTask = await Task.findOne({ taskName });
             if (existingTask) {
-                return errorHandle('', res, "Task already exists", 422, '');
+                return errorHandle('', res, "Task Already Exists", 422, '');
             }
         } catch (error) {
-            return errorHandle('', res, "Error checking existing task", 500, error.message);
+            return errorHandle('', res, "Error Checking Existing Task", 500, error.message);
         }
 
         try {
@@ -25,13 +27,68 @@ const createTask = async(req,res) => {
                 assignDate,
                 dueDate
             });
-            const newStatusMap = await TaskStatusMap.create({
-                taskId: newTask.id,
-                statusId: statusId
-            });
-            await Task.findByIdAndUpdate( newTask.id, { 
-                $push: { status: newStatusMap } 
-            });
+            try {
+                const newStatusMap = await TaskStatusMap.create({
+                    taskId: newTask.id,
+                    statusId: statusId
+                });
+                try {
+                    await Task.findByIdAndUpdate( newTask.id, { 
+                        $push: { status: newStatusMap } 
+                    });
+                } catch (error) {
+                    return errorHandle('', res, "Error Updating Task Status Map", 500, error.message);
+                }
+            } catch (error) {
+                return errorHandle('', res, "Error Creating Task Status Map", 500, error.message);
+            }            
+            try {
+                const user = await User.findById(userId);
+                if(user?.email){
+                    await sendEmail(
+                        user?.email, 
+                        'Task Assigned', 
+                        `<h1>Task Assigned</h1>
+                        <p>Task Name: ${taskName}</p>
+                        <p>Due Date: ${dueDate}</p>`
+                    );
+                }
+            } catch (error) {
+                return errorHandle('', res, "Error Sending Email", 500, error.message);
+            }
+            const due = new Date(dueDate);
+            const reminder = new Date(due);
+            reminder.setDate(due.getDate() - 1);
+            const now = new Date();
+
+            if(reminder > now) {
+                const min = reminder.getMinutes();
+                const hour = reminder.getHours();
+                const day = reminder.getDay();
+                const month = reminder.getMonth() + 1;
+
+                const cronTime = `${min} ${hour} ${day} ${month} *`;
+                
+                cron.schedule(cronTime, async() => {
+                    try {
+                        const user = await User.findById(userId);
+                        if(user?.email){
+                            try {
+                                await sendEmail(
+                                    user?.email, 
+                                    'Task Reminder', 
+                                    `<h1>Task Reminder</h1>
+                                    <p>Tomorrow is your Due Date for the Task: ${taskName}</p>`
+                                );
+                            } catch (error) {
+                                console.error('Error Sending Task Reminder Email', error);
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error Sending Task Reminder Email', error);
+                    }
+                });
+            }
             return successHandle('', res, "Task Created Successfully", 201, newTask);
         } catch (error) {
             return errorHandle('', res, "Error Creating Task", 500, error.message);
