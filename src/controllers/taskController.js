@@ -81,11 +81,11 @@ const createTask = async(req,res) => {
                                     <p>Tomorrow is your Due Date for the Task: ${taskName}</p>`
                                 );
                             } catch (error) {
-                                console.error('Error Sending Task Reminder Email', error);
+                                console.error('Error Sending Task Reminder Email', error.message);
                             }
                         }
                     } catch (error) {
-                        console.error('Error Sending Task Reminder Email', error);
+                        console.error('Error Sending Task Reminder Email', error.message);
                     }
                 });
             }
