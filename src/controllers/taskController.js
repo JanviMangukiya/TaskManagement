@@ -1,6 +1,8 @@
+const cron = require('node-cron');
 const Task = require('../models/taskModel');
+const User = require('../models/userModel');
 const TaskStatusMap = require('../models/taskStatusMapModel');
-const { successHandle, errorHandle } = require('../helper/helper');
+const { successHandle, errorHandle, sendEmail } = require('../helper/helper');
 const path = require('path');
 
 const createTask = async(req,res) => {
@@ -32,6 +34,43 @@ const createTask = async(req,res) => {
             await Task.findByIdAndUpdate( newTask.id, { 
                 $push: { status: newStatusMap } 
             });
+            
+            const user = await User.findById(userId);
+            if(user?.email){
+                await sendEmail(
+                    user?.email, 
+                    'Task Assigned', 
+                    `<h1>Task Assigned</h1>
+                    <p>Task Name: ${taskName}</p>
+                    <p>Due Date: ${dueDate}</p>`
+                );
+            }
+            const due = new Date(dueDate);
+            const reminder = new Date(due);
+            reminder.setDate(due.getDate() - 1);
+            const now = new Date();
+
+            if(reminder > now) {
+                const min = reminder.getMinutes();
+                const hour = reminder.getHours();
+                const day = reminder.getDay();
+                const month = reminder.getMonth() + 1;
+
+                const cronTime = `${min} ${hour} ${day} ${month} *`;
+                
+                cron.schedule(cronTime, async() => {
+                    const user = await User.findById(userId);
+                    if(user?.email){
+                        await sendEmail(
+                            user?.email, 
+                            'Task Reminder', 
+                            `<h1>Task Reminder</h1>
+                            <p>Tomorrow is your Due Date for the Task: ${taskName}</p>
+                            <p>Due Date: ${dueDate}</p>`
+                        );
+                    }
+                });
+            }
             return successHandle('', res, "Task Created Successfully", 201, newTask);
         } catch (error) {
             return errorHandle('', res, "Error Creating Task", 500, error.message);
