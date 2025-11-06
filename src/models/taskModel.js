@@ -13,7 +13,7 @@ const taskSchema = new mongoose.Schema({
         type: String,
         enum: ['Low', 'Medium', 'High']
     },
-    Userid: {
+    userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
     },
