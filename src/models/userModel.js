@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const { isDataView } = require('util/types');
 require('./roleModel');
 
 const userSchema = new mongoose.Schema({

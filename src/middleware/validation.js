@@ -41,9 +41,9 @@ const validationLogin = ((req, res, next) => {
 });
 
 const validationTask = ((req, res, next) => {
-    const { taskName, description, priority, Userid, assignDate, dueDate } = req.body;
+    const { taskName, description, priority, userId, assignDate, dueDate } = req.body;
 
-    if(!taskName || !description || !priority || !Userid || !assignDate || !dueDate) {
+    if(!taskName || !description || !priority || !userId || !assignDate || !dueDate) {
         return errorHandle('', res, "All Fields are Required", 400, '');
     }
 
