@@ -1,10 +1,17 @@
 const User = require('../models/userModel');
 const Role = require('../models/roleModel');
 const { successHandle, errorHandle } = require('../helper/helper'); 
+const cache = require('../utils/cache');
 
 const getAllUsers = async(req, res) => {
+    const cacheKey = `users:${JSON.stringify(req.query)}`;
+    const cacheData = cache.get(cacheKey);
+    if(cacheData) {
+        return successHandle('', res, "Users Retrieved Successfully (Cache)", 200, cacheData);
+    }
     try {
         const users = await User.find({ isDeleted: false });
+        cache.set(cacheKey, users);
         return successHandle('', res, "Users Retrieved Successfully", 200, users);
     } catch (error) {
         return errorHandle('', res, "Error Retrieving Users", 500, error.message);
@@ -12,6 +19,14 @@ const getAllUsers = async(req, res) => {
 };
 
 const updateUser = async(req, res) => {
+    cache.keys((err, keys)=> {
+        if(!err) {
+            const userKeys = keys.filter(key => key.startsWith('users:'));
+            if(userKeys.length) {
+                cache.del(userKeys);
+            }
+        }
+    });
     try {
         const { id } = req.params;
         const updateData = req.body;
@@ -34,6 +49,14 @@ const updateUser = async(req, res) => {
 };
 
 const deleteUser = async(req, res) => {
+    cache.keys((err, keys)=> {
+        if(!err) {
+            const userKeys = keys.filter(key => key.startsWith('users:'));
+            if(userKeys.length) {
+                cache.del(userKeys);
+            }
+        }
+    });
     try {
         const { id } = req.params;
         try {
