@@ -3,7 +3,7 @@ const Task = require('../models/taskModel');
 const User = require('../models/userModel');
 const TaskStatusMap = require('../models/taskStatusMapModel');
 const { successHandle, errorHandle, sendEmail } = require('../helper/helper');
-const path = require('path');
+const cache = require('../utils/cache');
 
 const createTask = async(req,res) => {
     try {
@@ -100,6 +100,11 @@ const createTask = async(req,res) => {
 
 const getAllTasks = async(req, res) => {
     try {
+        const cacheKey = `tasks:${JSON.stringify(req.query)}`;
+        const cacheData = cache.get(cacheKey);
+        if(cacheData) {
+            return successHandle('', res, "Tasks Retrieved Successfully (Cache)", 200, cacheData);
+        }
         const limit = parseInt(req?.query?.limit || 5);
         const page = parseInt(req?.query?.page || 1);
         if (page < 1 || limit < 1) {
@@ -176,6 +181,7 @@ const getAllTasks = async(req, res) => {
                 limit: limit,
                 totalPage
             };  
+            cache.set(cacheKey, { paginationInfo, tasks });
             return successHandle('', res, "Tasks Retrieved Successfully", 200, { paginationInfo, tasks });
         } catch (error) {
             return errorHandle('', res, "Task Not Found", 404, error.message);
@@ -186,6 +192,11 @@ const getAllTasks = async(req, res) => {
 };
 
 const getByIdTask = async(req, res) => {
+    const cacheKey = `tasks:${req.params.id}`;
+    const cacheData = cache.get(cacheKey);
+    if(cacheData) {
+        return successHandle('', res, "Tasks Retrieved Successfully (Cache)", 200, cacheData);
+    }
     try {
         const tasks = await Task.findById( req.params.id )
         .populate({
@@ -196,6 +207,7 @@ const getByIdTask = async(req, res) => {
                 select: 'statusName'
             }
         });
+        cache.set(cacheKey, tasks);
         return successHandle('', res, "Tasks Retrieved Successfully", 200, tasks);
     } catch (error) {
         return errorHandle('', res, "Error Retrieving Tasks", 500, error.message);
@@ -203,6 +215,15 @@ const getByIdTask = async(req, res) => {
 };
 
 const updateTask = async(req, res) => { 
+    cache.keys((err, keys)=> {
+        if(!err) {
+            const taskKeys = keys.filter(key => key.startsWith('tasks:'));
+            if(taskKeys.length) {
+                cache.del(taskKeys);
+            }
+        }
+    });
+
     try {
         const { id } = req.params;
         const updateData = req.body;
@@ -272,6 +293,14 @@ const getTaskStatusHistory = async(req, res) => {
 };
 
 const deleteTask = async(req, res) => {
+    cache.keys((err, keys)=> {
+        if(!err) {
+            const taskKeys = keys.filter(key => key.startsWith('tasks:'));
+            if(taskKeys.length) {
+                cache.del(taskKeys);
+            }
+        }
+    });
     try {
         const { id } = req.params;
         try {
