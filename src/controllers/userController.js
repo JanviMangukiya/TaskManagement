@@ -106,8 +106,12 @@ const createRole = async (req, res) => {
         if (existingRole) {
             return errorHandle('', res, "Role already exists", 422, '');
         }
-        const newRole = await Role.create({ roleName, permissions });
-        return successHandle('', res, "Add New Role Successfully", 201, newRole);
+        try {
+            const newRole = await Role.create({ roleName, permissions });
+            return successHandle('', res, "Add New Role Successfully", 201, newRole);
+        } catch (error) {
+            return errorHandle('', res, "Error in Creating Role", 500, error.message);
+        }
     } catch (error) {
         return errorHandle('', res, "Error in Creating Role", 500, error.message);
     }
@@ -125,7 +129,5 @@ const createPermission = async (req, res) => {
         return errorHandle('', res, "Error in Creating Permission", 500, error.message);
     }
 };
-
-
 
 module.exports = { register, login, createRole, createPermission };

@@ -32,17 +32,25 @@ const updateUser = async(req, res) => {
         const updateData = req.body;
         
         if (updateData.role) {
-            const roles = await Role.findOne({ roleName: updateData.role });
-            if (!roles) {
-                return errorHandle('', res, "Invalid Role", 400, '');
+            try {
+                const roles = await Role.findOne({ roleName: updateData.role });
+                if (!roles) {
+                    return errorHandle('', res, "Invalid Role", 400, '');
+                }
+                updateData.role = roles.id;
+            } catch (error) {
+                return errorHandle('', res, "Error Updating User", 500, error.message);
             }
-            updateData.role = roles.id;
         }
-        const updatedUser = await User.findByIdAndUpdate(id, updateData);
-        if (!updatedUser) {
-            return errorHandle('', res, "User Not Found", 404, '');
+        try {
+            const updatedUser = await User.findByIdAndUpdate(id, updateData);
+            if (!updatedUser) {
+                return errorHandle('', res, "User Not Found", 404, '');
+            }
+            return successHandle('', res, "User Updated Successfully", 200, updatedUser);
+        } catch (error) {
+            return errorHandle('', res, "Error Updating User", 500, error.message);
         }
-        return successHandle('', res, "User Updated Successfully", 200, updatedUser);
     } catch (error) {
         return errorHandle('', res, "Error Updating User", 500, error.message);
     }
