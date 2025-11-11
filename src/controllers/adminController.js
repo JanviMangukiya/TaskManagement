@@ -18,6 +18,19 @@ const getAllUsers = async(req, res) => {
     }
 };
 
+const getIdByUser = async(req, res) => {
+    try {
+        const { id } = req.params;
+        const user = await User.findById(id);
+        if (!user) {
+            return errorHandle('', res, "User Retrieved Successfully", 404, '');
+        }
+        return successHandle('', res, "User Retrieved Successfully", 200, user);
+    } catch (error) {
+        return errorHandle('', res, "Error Retrieving User", 500, error.message);
+    }
+};
+
 const updateUser = async(req, res) => {
     cache.keys((err, keys)=> {
         if(!err) {
@@ -81,4 +94,4 @@ const deleteUser = async(req, res) => {
     }
 };
 
-module.exports = { getAllUsers, updateUser, deleteUser };
+module.exports = { getAllUsers, updateUser, deleteUser, getIdByUser };
