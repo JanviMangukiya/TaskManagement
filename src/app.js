@@ -7,6 +7,9 @@ const app = express();
 app.use(express.json());
 require('./db.js');
 
+const { startTaskReminderJob } = require('./utils/taskReminder');
+startTaskReminderJob();
+
 const adminRouter = require('./routes/adminRoutes');
 const userRouter = require('./routes/userRoutes');
 const taskRouter = require('./routes/taskRoutes');
