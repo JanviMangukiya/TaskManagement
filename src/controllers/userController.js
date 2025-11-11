@@ -1,4 +1,3 @@
-const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const User = require('../models/userModel');
 const Role = require('../models/roleModel');
@@ -38,21 +37,16 @@ const register = async(req, res) => {
         }
 
         try {
-            const hash_password = await bcrypt.hash(password, 10);
-            try {
-                await User.create({
-                    firstName, 
-                    lastName, 
-                    birthDate, 
-                    email, 
-                    contact,
-                    password: hash_password,
-                    role: roles.id
-                });
-                return successHandle('', res, "User Registered Successfully", 201, '');
-            } catch (error) {
-                return errorHandle('', res, "Error to Create User", 500, error.message);
-            }
+            User.create({
+                firstName, 
+                lastName, 
+                birthDate, 
+                email, 
+                contact,
+                password,
+                role: roles.id
+            });
+            return successHandle('', res, "User Registered Successfully", 201, '');
         } catch (error) {
             return errorHandle('', res, "Error in Registration", 500, error.message);
         }
@@ -81,7 +75,7 @@ const login = async(req, res) => {
         }
         
         try {
-            const isMatch = await bcrypt.compare(password, user.password);
+            const isMatch = await user.comparePassword(password);
             if(!isMatch) {
                 return errorHandle('', res, "Invalid Password", 422, '');
             }
