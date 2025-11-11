@@ -10,7 +10,7 @@ const getAllUsers = async(req, res) => {
         return successHandle('', res, "Users Retrieved Successfully (Cache)", 200, cacheData);
     }
     try {
-        const users = await User.find({ isDeleted: false });
+        const users = await User.find({ isDeleted: false }).select("-password");
         cache.set(cacheKey, users);
         return successHandle('', res, "Users Retrieved Successfully", 200, users);
     } catch (error) {
@@ -21,7 +21,7 @@ const getAllUsers = async(req, res) => {
 const getIdByUser = async(req, res) => {
     try {
         const { id } = req.params;
-        const user = await User.findById(id);
+        const user = await User.findById(id).select("-password");
         if (!user) {
             return errorHandle('', res, "User Retrieved Successfully", 404, '');
         }
