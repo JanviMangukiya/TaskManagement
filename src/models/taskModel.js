@@ -13,6 +13,9 @@ const taskSchema = new mongoose.Schema({
         type: String,
         enum: ['Low', 'Medium', 'High']
     },
+    category: {
+        type: String
+    },
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
