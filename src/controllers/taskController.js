@@ -9,6 +9,7 @@ const createTask = async (req, res) => {
       taskName,
       description,
       priority,
+      category,
       userId,
       statusId,
       assignDate,
@@ -35,6 +36,7 @@ const createTask = async (req, res) => {
         taskName,
         description,
         priority,
+        category,
         userId,
         assignDate,
         dueDate,
@@ -122,7 +124,11 @@ const getAllTasks = async (req, res) => {
     if (searchObj) {
       try {
         search = JSON.parse(searchObj);
-        if (search.name == "taskName" || search.name == "priority") {
+        if (
+          search.name == "taskName" ||
+          search.name == "priority" ||
+          search.name == "category"
+        ) {
           filter[search.name] = { $regex: search.value, $options: "i" };
         }
         if (search.name == "assignDate" || search.name == "dueDate") {
