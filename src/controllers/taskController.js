@@ -2,6 +2,7 @@ const Task = require('../models/taskModel');
 const User = require('../models/userModel');
 const TaskStatusMap = require('../models/taskStatusMapModel');
 const { successHandle, errorHandle, sendEmail } = require('../helper/helper');
+const { assign } = require('nodemailer/lib/shared');
 
 const createTask = async(req,res) => {
     try {
@@ -258,4 +259,45 @@ const deleteTask = async(req, res) => {
     }
 };
 
-module.exports = { createTask, getAllTasks, getByIdTask, updateTask, updateTaskStatus, deleteTask, getTaskStatusHistory };
+const filterByPriority = async(req, res) => {
+    try {
+        const { priority } = req.query;
+        if(!priority) {
+            return errorHandle('', res, "Priority is Required", 400, '');
+        }
+        const pipeline = [
+            {
+                $match: {
+                    isDeleted: false,
+                    priority: { $regex: priority, $options: 'i' }
+                }
+            },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "userId",
+                    foreignField: "_id",
+                    as: "user"
+                }
+            },
+            {
+                $unwind: "$user"
+            },
+            {
+                $group: {
+                    _id: "$priority",
+                    taskCount: { $sum: 1},
+                    userName: {
+                        $addToSet: { $concat: ["$user.firstName", " ", "$user.lastName"] }
+                    }
+                }
+            }
+        ];
+        const ans = await Task.aggregate(pipeline);
+        return successHandle('', res, "Task Filtered Successfully", 200, ans);
+    } catch (error) {
+        return errorHandle('', res, "Error Filtering Task", 500, error.message);
+    }
+};
+
+module.exports = { createTask, getAllTasks, getByIdTask, updateTask, updateTaskStatus, deleteTask, getTaskStatusHistory, filterByPriority };
