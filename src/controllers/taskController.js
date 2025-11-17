@@ -1,6 +1,7 @@
 const Task = require("../models/taskModel");
 const User = require("../models/userModel");
 const TaskStatusMap = require("../models/taskStatusMapModel");
+const Comment = require("../models/commentModel");
 const { successHandle, errorHandle, sendEmail } = require("../helper/helper");
 
 const createTask = async (req, res) => {
@@ -12,6 +13,7 @@ const createTask = async (req, res) => {
       category,
       userId,
       statusId,
+      comment,
       assignDate,
       dueDate,
     } = req.body;
@@ -38,9 +40,29 @@ const createTask = async (req, res) => {
         priority,
         category,
         userId,
+        comment,
         assignDate,
         dueDate,
       });
+      if (comment) {
+        try {
+          await Comment.create({
+            taskId: newTask.id,
+            userId: userId,
+            comment: comment,
+            isLiked: false,
+          });
+        } catch (error) {
+          return errorHandle(
+            "",
+            res,
+            "Error Creating Comment",
+            500,
+            error.message
+          );
+        }
+      }
+
       try {
         const newStatusMap = await TaskStatusMap.create({
           taskId: newTask.id,
@@ -124,10 +146,12 @@ const getAllTasks = async (req, res) => {
     if (searchObj) {
       try {
         search = JSON.parse(searchObj);
-        if (
-          search.name == "taskName" ||
-          search.name == "priority" ||
-          search.name == "category"
+        if (search.name === "isLiked") {
+          filter[search.name] = search.value.toLowerCase() === "true";
+        } else if (
+          search.name === "taskName" ||
+          search.name === "priority" ||
+          search.name === "category"
         ) {
           filter[search.name] = { $regex: search.value, $options: "i" };
         }
@@ -205,19 +229,40 @@ const getAllTasks = async (req, res) => {
         );
       }
 
+      const totalTaskLiked = tasks.reduce(
+        (total, task) => total + task?.likedBy?.length,
+        0
+      );
+      const totalTaskComment = tasks.filter((task) => task.comment).length;
       const totalRecord = tasks.length;
       const totalPage = Math.ceil(totalRecord / limit);
       tasks = tasks.slice(offset, offset + limit);
+
+      const commentCounts = await Promise.all(
+        tasks.map(async (task) => {
+          const commentCount = await Comment.countDocuments({
+            taskId: task._id,
+          });
+          const likedCount = task.likedBy.length;
+          return {
+            ...task.toObject(),
+            commentCount: commentCount,
+            likedCount: likedCount,
+          };
+        })
+      );
 
       const paginationInfo = {
         totalRecord: totalRecord,
         currentPage: page,
         limit: limit,
         totalPage,
+        totalTaskLiked,
+        totalTaskComment,
       };
       return successHandle("", res, "Tasks Retrieved Successfully", 200, {
         paginationInfo,
-        tasks,
+        tasks: commentCounts,
       });
     } catch (error) {
       return errorHandle("", res, "Task Not Found", 404, error.message);
@@ -229,7 +274,7 @@ const getAllTasks = async (req, res) => {
 
 const getByIdTask = async (req, res) => {
   try {
-    const tasks = await Task.findById(req.params.id).populate({
+    const task = await Task.findById(req.params.id).populate({
       path: "status",
       options: { sort: { createdAt: -1 }, limit: 1 },
       populate: {
@@ -237,17 +282,53 @@ const getByIdTask = async (req, res) => {
         select: "statusName",
       },
     });
-    return successHandle("", res, "Tasks Retrieved Successfully", 200, tasks);
+
+    if (!task) {
+      return errorHandle("", res, "Task not found", 404, "");
+    }
+
+    const commentCount = await Comment.countDocuments({ taskId: task.id });
+    const likedCount = task.likedBy.length;
+    const taskWithCommentCount = {
+      ...task.toObject(),
+      commentCount: commentCount,
+      likedCount: likedCount,
+    };
+    return successHandle(
+      "",
+      res,
+      "Tasks Retrieved Successfully",
+      200,
+      taskWithCommentCount
+    );
   } catch (error) {
-    return errorHandle("", res, "Error Retrieving Tasks", 500, error.message);
+    return errorHandle("", res, "Error Retrieving Task", 500, error.message);
   }
 };
 
 const updateTask = async (req, res) => {
   try {
     const { id } = req.params;
-    const updateData = req.body;
+    const updateData = { ...req.body };
+    const { comment, userId } = updateData;
     try {
+      if (comment && userId) {
+        try {
+          await Comment.create({
+            taskId: id,
+            userId: userId,
+            comment: comment,
+          });
+        } catch (error) {
+          return errorHandle(
+            "",
+            res,
+            "Error Updating Comment",
+            500,
+            error.message
+          );
+        }
+      }
       const updatedTask = await Task.findByIdAndUpdate(id, updateData);
       if (!updatedTask) {
         return errorHandle("", res, "Task Not Found", 404, "");
@@ -370,6 +451,56 @@ const deleteTask = async (req, res) => {
   }
 };
 
+const addIsLikedTask = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { userId } = req.body;
+
+    const task = await Task.findById(id);
+    if (!task) {
+      return errorHandle("", res, "Task Not Found", 404, "");
+    }
+    const alreadyLiked = task.likedBy.includes(userId);
+
+    if (!alreadyLiked) {
+      task.isLiked = true;
+      task.likedBy.push(userId);
+    } else {
+      task.isLiked = false;
+      task.likedBy.pull(userId);
+    }
+    await task.save();
+    return successHandle("", res, "Task Liked", 200, task);
+  } catch (error) {
+    return errorHandle("", res, "Error Liking Task", 500, error.message);
+  }
+};
+
+const addIsLikedComment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { userId } = req.body;
+
+    const comment = await Comment.findById(id);
+    if (!comment) {
+      return errorHandle("", res, "Comment Not Found", 404, "");
+    }
+    const alreadyLiked = comment.likedBy.includes(userId);
+
+    if (!alreadyLiked) {
+      comment.isLiked = true;
+      comment.likedBy.push(userId);
+    } else {
+      comment.isLiked = false;
+      comment.likedBy.pull(userId);
+    }
+    await comment.save();
+    return successHandle("", res, "Comment Liked", 200, comment);
+  } catch (error) {
+    return errorHandle("", res, "Error Liking Comment", 500, error.message);
+  }
+};
+
 const filterByPriority = async (req, res) => {
   try {
     const { priority } = req.query;
@@ -417,7 +548,9 @@ module.exports = {
   getByIdTask,
   updateTask,
   updateTaskStatus,
-  deleteTask,
   getTaskStatusHistory,
+  deleteTask,
+  addIsLikedTask,
+  addIsLikedComment,
   filterByPriority,
 };

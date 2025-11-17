@@ -1,40 +1,58 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const taskSchema = new mongoose.Schema({
+const taskSchema = new mongoose.Schema(
+  {
     taskName: {
-        type: String,
-        required: true,
-        unique: true
+      type: String,
+      required: true,
+      unique: true,
     },
     description: {
-        type: String
+      type: String,
     },
     priority: {
-        type: String,
-        enum: ['Low', 'Medium', 'High']
+      type: String,
+      enum: ["Low", "Medium", "High"],
     },
     category: {
-        type: String
+      type: String,
     },
     userId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User'
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
     },
     assignDate: {
-        type: Date
+      type: Date,
     },
     dueDate: {
-        type: Date  
+      type: Date,
     },
     isDeleted: {
-        type: Boolean,
-        default: false
+      type: Boolean,
+      default: false,
     },
-    status: [{
+    comment: {
+      type: String,
+    },
+    status: [
+      {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'TaskStatusMap'
-    }]
-}, { timestamps: true });
+        ref: "TaskStatusMap",
+      },
+    ],
+    isLiked: {
+      type: Boolean,
+      default: false,
+    },
+    likedBy: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+  },
+  { timestamps: true }
+);
 
-const Task = mongoose.model('Task', taskSchema);
+const Task = mongoose.model("Task", taskSchema);
 module.exports = Task;
