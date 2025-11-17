@@ -1,6 +1,6 @@
 const express = require('express');
 const app = express.Router();
-const { createTask, getAllTasks, getByIdTask, updateTask, updateTaskStatus, getTaskStatusHistory, deleteTask, filterByPriority } = require('../controllers/taskController');
+const { createTask, getAllTasks, getByIdTask, updateTask, updateTaskStatus, addIsLikedTask, addIsLikedComment, getTaskStatusHistory, deleteTask, filterByPriority } = require('../controllers/taskController');
 const { verifyToken, checkRole } = require('../middleware/authMiddleware');
 const { validationTask } = require('../middleware/validation');
 
@@ -15,6 +15,10 @@ app.get('/filterByPriority', verifyToken, checkRole('Admin'), filterByPriority);
 app.put('/updateTask/:id', verifyToken, checkRole('Admin'), updateTask);
 
 app.put('/updateStatus/:id', verifyToken, checkRole('Admin'), updateTaskStatus);
+
+app.put('/likedTask/:id', verifyToken, addIsLikedTask);
+
+app.put('/likedComment/:id', verifyToken, addIsLikedComment);
 
 app.get('/statusHistory/:id', verifyToken, checkRole('Admin'), getTaskStatusHistory);
 

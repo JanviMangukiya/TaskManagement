@@ -30,9 +30,20 @@ const taskSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    comment: {
+        type: String
+    },
     status: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'TaskStatusMap'
+    }],
+    isLiked: {
+        type: Boolean,
+        default: false
+    },
+    likedBy: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
     }]
 }, { timestamps: true });
 
