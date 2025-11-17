@@ -44,19 +44,25 @@ const createTask = async (req, res) => {
         assignDate,
         dueDate,
       });
-      if(comment) {
+      if (comment) {
         try {
           await Comment.create({
             taskId: newTask.id,
             userId: userId,
             comment: comment,
-            isLiked: false
+            isLiked: false,
           });
         } catch (error) {
-          return errorHandle("", res, "Error Creating Comment", 500, error.message);
+          return errorHandle(
+            "",
+            res,
+            "Error Creating Comment",
+            500,
+            error.message
+          );
         }
-      };
-      
+      }
+
       try {
         const newStatusMap = await TaskStatusMap.create({
           taskId: newTask.id,
@@ -141,7 +147,7 @@ const getAllTasks = async (req, res) => {
       try {
         search = JSON.parse(searchObj);
         if (search.name === "isLiked") {
-          filter[search.name] = search.value.toLowerCase() === 'true';
+          filter[search.name] = search.value.toLowerCase() === "true";
         } else if (
           search.name === "taskName" ||
           search.name === "priority" ||
@@ -223,20 +229,25 @@ const getAllTasks = async (req, res) => {
         );
       }
 
-      const totalTaskLiked = tasks.reduce((total, task) => total + (task?.likedBy?.length), 0);
-      const totalTaskComment = tasks.filter(task => task.comment).length;
+      const totalTaskLiked = tasks.reduce(
+        (total, task) => total + task?.likedBy?.length,
+        0
+      );
+      const totalTaskComment = tasks.filter((task) => task.comment).length;
       const totalRecord = tasks.length;
       const totalPage = Math.ceil(totalRecord / limit);
       tasks = tasks.slice(offset, offset + limit);
 
       const commentCounts = await Promise.all(
         tasks.map(async (task) => {
-          const commentCount = await Comment.countDocuments({ taskId: task._id });
-          const likedCount = task.likedBy.length;   
+          const commentCount = await Comment.countDocuments({
+            taskId: task._id,
+          });
+          const likedCount = task.likedBy.length;
           return {
             ...task.toObject(),
             commentCount: commentCount,
-            likedCount: likedCount
+            likedCount: likedCount,
           };
         })
       );
@@ -247,7 +258,7 @@ const getAllTasks = async (req, res) => {
         limit: limit,
         totalPage,
         totalTaskLiked,
-        totalTaskComment
+        totalTaskComment,
       };
       return successHandle("", res, "Tasks Retrieved Successfully", 200, {
         paginationInfo,
@@ -275,15 +286,21 @@ const getByIdTask = async (req, res) => {
     if (!task) {
       return errorHandle("", res, "Task not found", 404, "");
     }
-    
+
     const commentCount = await Comment.countDocuments({ taskId: task.id });
     const likedCount = task.likedBy.length;
     const taskWithCommentCount = {
       ...task.toObject(),
       commentCount: commentCount,
-      likedCount: likedCount
+      likedCount: likedCount,
     };
-    return successHandle("", res, "Tasks Retrieved Successfully", 200, taskWithCommentCount);
+    return successHandle(
+      "",
+      res,
+      "Tasks Retrieved Successfully",
+      200,
+      taskWithCommentCount
+    );
   } catch (error) {
     return errorHandle("", res, "Error Retrieving Task", 500, error.message);
   }
@@ -295,15 +312,21 @@ const updateTask = async (req, res) => {
     const updateData = { ...req.body };
     const { comment, userId } = updateData;
     try {
-      if( comment && userId ) {
+      if (comment && userId) {
         try {
           await Comment.create({
             taskId: id,
             userId: userId,
-            comment: comment
+            comment: comment,
           });
         } catch (error) {
-          return errorHandle("", res, "Error Updating Comment", 500, error.message);
+          return errorHandle(
+            "",
+            res,
+            "Error Updating Comment",
+            500,
+            error.message
+          );
         }
       }
       const updatedTask = await Task.findByIdAndUpdate(id, updateData);
@@ -432,14 +455,14 @@ const addIsLikedTask = async (req, res) => {
   try {
     const { id } = req.params;
     const { userId } = req.body;
-    
+
     const task = await Task.findById(id);
-    if(!task) {
+    if (!task) {
       return errorHandle("", res, "Task Not Found", 404, "");
     }
     const alreadyLiked = task.likedBy.includes(userId);
 
-    if(!alreadyLiked) {
+    if (!alreadyLiked) {
       task.isLiked = true;
       task.likedBy.push(userId);
     } else {
@@ -457,14 +480,14 @@ const addIsLikedComment = async (req, res) => {
   try {
     const { id } = req.params;
     const { userId } = req.body;
-    
+
     const comment = await Comment.findById(id);
-    if(!comment) {
+    if (!comment) {
       return errorHandle("", res, "Comment Not Found", 404, "");
     }
     const alreadyLiked = comment.likedBy.includes(userId);
 
-    if(!alreadyLiked) {
+    if (!alreadyLiked) {
       comment.isLiked = true;
       comment.likedBy.push(userId);
     } else {
@@ -477,7 +500,7 @@ const addIsLikedComment = async (req, res) => {
     return errorHandle("", res, "Error Liking Comment", 500, error.message);
   }
 };
-  
+
 const filterByPriority = async (req, res) => {
   try {
     const { priority } = req.query;
@@ -529,5 +552,5 @@ module.exports = {
   deleteTask,
   addIsLikedTask,
   addIsLikedComment,
-  filterByPriority
+  filterByPriority,
 };

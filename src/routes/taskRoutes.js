@@ -1,27 +1,43 @@
-const express = require('express');
+const express = require("express");
 const app = express.Router();
-const { createTask, getAllTasks, getByIdTask, updateTask, updateTaskStatus, addIsLikedTask, addIsLikedComment, getTaskStatusHistory, deleteTask, filterByPriority } = require('../controllers/taskController');
-const { verifyToken, checkRole } = require('../middleware/authMiddleware');
-const { validationTask } = require('../middleware/validation');
+const {
+  createTask,
+  getAllTasks,
+  getByIdTask,
+  updateTask,
+  updateTaskStatus,
+  addIsLikedTask,
+  addIsLikedComment,
+  getTaskStatusHistory,
+  deleteTask,
+  filterByPriority,
+} = require("../controllers/taskController");
+const { verifyToken, checkRole } = require("../middleware/authMiddleware");
+const { validationTask } = require("../middleware/validation");
 
-app.post('/add', verifyToken, checkRole('Admin'), validationTask, createTask);
+app.post("/add", verifyToken, checkRole("Admin"), validationTask, createTask);
 
-app.get('/getAll', verifyToken, checkRole('Admin'), getAllTasks); 
+app.get("/getAll", verifyToken, checkRole("Admin"), getAllTasks);
 
-app.get('/getById/:id', verifyToken, checkRole('Admin'), getByIdTask);
+app.get("/getById/:id", verifyToken, checkRole("Admin"), getByIdTask);
 
-app.get('/filterByPriority', verifyToken, checkRole('Admin'), filterByPriority);
+app.get("/filterByPriority", verifyToken, checkRole("Admin"), filterByPriority);
 
-app.put('/updateTask/:id', verifyToken, checkRole('Admin'), updateTask);
+app.put("/updateTask/:id", verifyToken, checkRole("Admin"), updateTask);
 
-app.put('/updateStatus/:id', verifyToken, checkRole('Admin'), updateTaskStatus);
+app.put("/updateStatus/:id", verifyToken, checkRole("Admin"), updateTaskStatus);
 
-app.put('/likedTask/:id', verifyToken, addIsLikedTask);
+app.put("/likedTask/:id", verifyToken, addIsLikedTask);
 
-app.put('/likedComment/:id', verifyToken, addIsLikedComment);
+app.put("/likedComment/:id", verifyToken, addIsLikedComment);
 
-app.get('/statusHistory/:id', verifyToken, checkRole('Admin'), getTaskStatusHistory);
+app.get(
+  "/statusHistory/:id",
+  verifyToken,
+  checkRole("Admin"),
+  getTaskStatusHistory
+);
 
-app.delete('/delete/:id', verifyToken, checkRole('Admin'), deleteTask);
+app.delete("/delete/:id", verifyToken, checkRole("Admin"), deleteTask);
 
 module.exports = app;
