@@ -2,8 +2,10 @@ const path = require('path')
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') })
 
 const express = require('express');
+const rateLimit = require('./middleware/rateLimiter');
 const app = express();
 
+app.use(rateLimit);
 app.use(express.json());
 require('./db.js');
 
