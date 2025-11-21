@@ -7,7 +7,7 @@ const rateLimit = require("./middleware/rateLimiter");
 require("./db");
 
 const { startTaskReminderJob } = require("./utils/taskReminder");
-const { listenMessage } = require("./services/googlePubSub");
+const { listenMessage } = require("./utils/googlePubSub");
 
 const adminRouter = require("./routes/adminRoutes");
 const userRouter = require("./routes/userRoutes");
