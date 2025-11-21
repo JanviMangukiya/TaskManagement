@@ -1,3 +1,5 @@
+const fs = require("fs");
+const path = require("path");
 const Task = require("../models/taskModel");
 const User = require("../models/userModel");
 const TaskStatusMap = require("../models/taskStatusMapModel");
@@ -94,13 +96,14 @@ const createTask = async (req, res) => {
         const user = await User.findById(userId);
         if (user?.email) {
           try {
-            await sendEmail(
-              user?.email,
-              "Task Assigned",
-              `<h1>Task Assigned</h1>
-                            <p>Task Name: ${taskName}</p>
-                            <p>Due Date: ${dueDate}</p>`
+            let htmlBody = fs.readFileSync(
+              path.join(__dirname, "..", "emailTemplate", "sendEmail.html"),
+              "utf8"
             );
+            htmlBody = htmlBody
+              .replace("{taskName}", taskName)
+              .replace("{dueDate}", dueDate);
+            await sendEmail(user?.email, "Task Assigned", htmlBody);
           } catch (error) {
             return errorHandle(
               "",

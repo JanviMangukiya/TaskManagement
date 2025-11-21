@@ -12,6 +12,9 @@ require("./db");
 const { startTaskReminderJob } = require("./utils/taskReminder");
 startTaskReminderJob();
 
+const { listenMessage } = require("./utils/googlePubSub");
+listenMessage("UserCreation-sub");
+
 const adminRouter = require("./routes/adminRoutes");
 const userRouter = require("./routes/userRoutes");
 const taskRouter = require("./routes/taskRoutes");
