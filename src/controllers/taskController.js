@@ -103,19 +103,29 @@ const createTask = async (req, res) => {
             htmlBody = htmlBody
               .replace("{taskName}", taskName)
               .replace("{dueDate}", dueDate);
-            await sendEmail(user?.email, "Task Assigned", htmlBody);
+            try {
+              await sendEmail(user?.email, "Task Assigned", htmlBody);
+            } catch (error) {
+              return errorHandle(
+                "",
+                res,
+                "Error Sending Email",
+                500,
+                error.message
+              );
+            }
           } catch (error) {
             return errorHandle(
               "",
               res,
-              "Error Sending Email",
+              "Error Creating Task and Sending Email",
               500,
               error.message
             );
           }
         }
       } catch (error) {
-        return errorHandle("", res, "Error Sending Email", 500, error.message);
+        return errorHandle("", res, "Error Creating Task", 500, error.message);
       }
       return successHandle("", res, "Task Created Successfully", 201, newTask);
     } catch (error) {
@@ -458,10 +468,14 @@ const addIsLikedTask = async (req, res) => {
   try {
     const { id } = req.params;
     const { userId } = req.body;
-
-    const task = await Task.findById(id);
-    if (!task) {
-      return errorHandle("", res, "Task Not Found", 404, "");
+    let task;
+    try {
+      task = await Task.findById(id);
+      if (!task) {
+        return errorHandle("", res, "Task Not Found", 404, "");
+      }
+    } catch (error) {
+      return errorHandle("", res, "Error Liking Task", 500, error.message);
     }
     const alreadyLiked = task.likedBy.includes(userId);
 
@@ -472,7 +486,11 @@ const addIsLikedTask = async (req, res) => {
       task.isLiked = false;
       task.likedBy.pull(userId);
     }
-    await task.save();
+    try {
+      await task.save();
+    } catch (error) {
+      return errorHandle("", res, "Error Liking Task", 500, error.message);
+    }
     return successHandle("", res, "Task Liked", 200, task);
   } catch (error) {
     return errorHandle("", res, "Error Liking Task", 500, error.message);
@@ -483,10 +501,14 @@ const addIsLikedComment = async (req, res) => {
   try {
     const { id } = req.params;
     const { userId } = req.body;
-
-    const comment = await Comment.findById(id);
-    if (!comment) {
-      return errorHandle("", res, "Comment Not Found", 404, "");
+    let comment;
+    try {
+      comment = await Comment.findById(id);
+      if (!comment) {
+        return errorHandle("", res, "Comment Not Found", 404, "");
+      }
+    } catch (error) {
+      return errorHandle("", res, "Error Liking Comment", 500, error.message);
     }
     const alreadyLiked = comment.likedBy.includes(userId);
 
@@ -497,7 +519,11 @@ const addIsLikedComment = async (req, res) => {
       comment.isLiked = false;
       comment.likedBy.pull(userId);
     }
-    await comment.save();
+    try {
+      await comment.save();
+    } catch (error) {
+      return errorHandle("", res, "Error Liking Comment", 500, error.message);
+    }
     return successHandle("", res, "Comment Liked", 200, comment);
   } catch (error) {
     return errorHandle("", res, "Error Liking Comment", 500, error.message);
@@ -538,8 +564,12 @@ const filterByPriority = async (req, res) => {
         },
       },
     ];
-    const ans = await Task.aggregate(pipeline);
-    return successHandle("", res, "Task Filtered Successfully", 200, ans);
+    try {
+      const ans = await Task.aggregate(pipeline);
+      return successHandle("", res, "Task Filtered Successfully", 200, ans);
+    } catch (error) {
+      return errorHandle("", res, "Error Filtering Task", 500, error.message);
+    }
   } catch (error) {
     return errorHandle("", res, "Error Filtering Task", 500, error.message);
   }

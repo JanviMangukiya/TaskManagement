@@ -5,21 +5,21 @@ const Permission = require('../models/permissionModel');
 const { successHandle, errorHandle } = require('../helper/helper');
 require('dotenv').config();
 
-const register = async(req, res) => {
+const register = async (req, res) => {
     try {
         const { firstName, lastName, birthDate, email, contact, password, role } = req.body;
         try {
             const existingEmail = await User.findOne({ email });
-            if(existingEmail) {
+            if (existingEmail) {
                 return errorHandle('', res, "Email is Already Register", 422, '');
-            }    
+            }
         } catch (error) {
             return errorHandle('', res, "Not Found", 404, error.message);
         }
 
         try {
             const existingContact = await User.findOne({ contact });
-            if(existingContact) {
+            if (existingContact) {
                 return errorHandle('', res, "Contact is Already Register", 422, '');
             }
         } catch (error) {
@@ -38,10 +38,10 @@ const register = async(req, res) => {
 
         try {
             User.create({
-                firstName, 
-                lastName, 
-                birthDate, 
-                email, 
+                firstName,
+                lastName,
+                birthDate,
+                email,
                 contact,
                 password,
                 role: roles.id
@@ -55,42 +55,42 @@ const register = async(req, res) => {
     }
 }
 
-const login = async(req, res) => {
-   try {
+const login = async (req, res) => {
+    try {
         const { userName, password } = req.body;
         let user;
         try {
             user = await User.findOne({
                 $or: [
-                    { email: userName }, 
-                    { contact: userName}
+                    { email: userName },
+                    { contact: userName }
                 ]
             });
-    
-            if(!user) {
-                return errorHandle('', res, "No Matching User Found", 404, ''); 
+
+            if (!user) {
+                return errorHandle('', res, "No Matching User Found", 404, '');
             }
         } catch (error) {
             return errorHandle('', res, "User is Not Registered", 404, error.message);
         }
-        
+
         try {
             const isMatch = await user.comparePassword(password);
-            if(!isMatch) {
+            if (!isMatch) {
                 return errorHandle('', res, "Invalid Password", 422, '');
             }
         } catch (error) {
             return errorHandle('', res, "Somthing Went Wrong", 500, error.message);
         }
         const token = jwt.sign(
-            { id: user._id, role: user.role.toString() }, 
+            { id: user._id, role: user.role.toString() },
             process.env.SECRET_KEY,
             { expiresIn: '1h' }
         );
         return successHandle('', res, "Login Successfully", 200, token);
-   } catch (error) {
-    return errorHandle('', res, "Error in Login", 401, error.message);
-   }
+    } catch (error) {
+        return errorHandle('', res, "Error in Login", 401, error.message);
+    }
 }
 
 const createRole = async (req, res) => {

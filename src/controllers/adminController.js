@@ -1,12 +1,12 @@
 const User = require('../models/userModel');
 const Role = require('../models/roleModel');
-const { successHandle, errorHandle } = require('../helper/helper'); 
+const { successHandle, errorHandle } = require('../helper/helper');
 const cache = require('../utils/cache');
 
-const getAllUsers = async(req, res) => {
+const getAllUsers = async (req, res) => {
     const cacheKey = `users:${JSON.stringify(req.query)}`;
     const cacheData = cache.get(cacheKey);
-    if(cacheData) {
+    if (cacheData) {
         return successHandle('', res, "Users Retrieved Successfully (Cache)", 200, cacheData);
     }
     try {
@@ -18,24 +18,28 @@ const getAllUsers = async(req, res) => {
     }
 };
 
-const getIdByUser = async(req, res) => {
+const getIdByUser = async (req, res) => {
     try {
         const { id } = req.params;
-        const user = await User.findById(id).select("-password");
-        if (!user) {
-            return errorHandle('', res, "User Retrieved Successfully", 404, '');
+        try {
+            const user = await User.findById(id).select("-password");
+            if (!user) {
+                return errorHandle('', res, "User Not Found", 404, '');
+            }
+            return successHandle('', res, "User Retrieved Successfully", 200, user);
+        } catch (error) {
+            return errorHandle('', res, "Error Retrieving User", 500, error.message);
         }
-        return successHandle('', res, "User Retrieved Successfully", 200, user);
     } catch (error) {
         return errorHandle('', res, "Error Retrieving User", 500, error.message);
     }
 };
 
-const updateUser = async(req, res) => {
-    cache.keys((err, keys)=> {
-        if(!err) {
+const updateUser = async (req, res) => {
+    cache.keys((err, keys) => {
+        if (!err) {
             const userKeys = keys.filter(key => key.startsWith('users:'));
-            if(userKeys.length) {
+            if (userKeys.length) {
                 cache.del(userKeys);
             }
         }
@@ -43,7 +47,7 @@ const updateUser = async(req, res) => {
     try {
         const { id } = req.params;
         const updateData = req.body;
-        
+
         if (updateData.role) {
             try {
                 const roles = await Role.findOne({ roleName: updateData.role });
@@ -69,11 +73,11 @@ const updateUser = async(req, res) => {
     }
 };
 
-const deleteUser = async(req, res) => {
-    cache.keys((err, keys)=> {
-        if(!err) {
+const deleteUser = async (req, res) => {
+    cache.keys((err, keys) => {
+        if (!err) {
             const userKeys = keys.filter(key => key.startsWith('users:'));
-            if(userKeys.length) {
+            if (userKeys.length) {
                 cache.del(userKeys);
             }
         }

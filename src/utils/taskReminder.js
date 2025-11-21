@@ -13,10 +13,15 @@ const checkAndSendReminders = async () => {
     const endOfTomorrow = new Date(tomorrow.toDateString());
     endOfTomorrow.setDate(endOfTomorrow.getDate() + 1);
 
-    const tasks = await Task.find({
-      dueDate: { $gte: startOfTomorrow, $lt: endOfTomorrow },
-      isDeleted: false,
-    }).populate("userId", "email");
+    let tasks;
+    try {
+      tasks = await Task.find({
+        dueDate: { $gte: startOfTomorrow, $lt: endOfTomorrow },
+        isDeleted: false,
+      }).populate("userId", "email");
+    } catch (error) {
+      console.error("Error in Task Reminder", error.message);
+    }
 
     const totalTasks = tasks.length;
     const chunkSize = Math.ceil(totalTasks / batchSize);
@@ -32,7 +37,11 @@ const checkAndSendReminders = async () => {
           taskName: task?.taskName,
           dueDate: task?.dueDate,
         }));
-      await publishMessage("UserCreation", data);
+      try {
+        await publishMessage("UserCreation", data);
+      } catch (error) {
+        console.error("Error in Task Reminder", error.message);
+      }
     }
   } catch (error) {
     console.error("Error in Task Reminder", error.message);
@@ -40,7 +49,9 @@ const checkAndSendReminders = async () => {
 };
 
 const startTaskReminderJob = () => {
-  cron.schedule("0 9 * * *", checkAndSendReminders);
+  cron.schedule("0 9 * * *", () => {
+    checkAndSendReminders();
+  });
 };
 
 module.exports = { startTaskReminderJob };
