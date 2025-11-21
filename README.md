@@ -121,8 +121,8 @@ RATE_LIMIT_MAX=100  # limit each IP to 100 requests per windowMs
 
 ## Scripts
 
-- `npm start` - Start the production server
-- `npm run dev` - Start the development server with nodemon
+- `node app.js` - Start the server
+- `nodemon app.js` - Start the server with nodemon
 
 ---
 
