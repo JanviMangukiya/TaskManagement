@@ -1,6 +1,6 @@
 const cron = require("node-cron");
 const Task = require("../models/taskModel");
-const { publishMessage } = require("./googlePubSub");
+const { publishMessage } = require("../services/googlePubSub");
 const batchSize = parseInt(process.env.BATCH_SIZE) || 100;
 
 const checkAndSendReminders = async () => {
