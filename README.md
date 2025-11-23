@@ -14,7 +14,6 @@ It supports user management, task creation, status updates, and automated remind
 - [Environment Variables](#environment-variables)
 - [Scripts](#scripts)
 - [API Endpoints](#api-endpoints)
-- [License](#license)
 
 ---
 
@@ -46,43 +45,43 @@ It supports user management, task creation, status updates, and automated remind
 
 ## Project Structure
 
-```text
+```
 src/
-├── config/                 # Configuration files
-│   └── nodejs-pub-sub.json # Google Cloud Pub/Sub configuration
-├── controllers/            # Route controllers
-│   ├── adminController.js  # Admin-specific operations
-│   ├── taskController.js   # Task management logic
-│   ├── taskStatusController.js # Task status operations
-│   └── userController.js   # User authentication and management
-├── emailTemplate/          # Email templates
-│   ├── reminderEmail.html  # Reminder email template
-│   └── sendEmail.html      # General email template
-├── helper/                 # Helper functions
-│   └── helper.js           # Common helper utilities
-├── middleware/             # Custom middleware
-│   ├── authMiddleware.js   # Authentication middleware
-│   ├── rateLimiter.js      # Rate limiting middleware
-│   └── validation.js       # Request validation
-├── models/                 # Database models
-│   ├── permissionModel.js  # Permission schema
-│   ├── roleModel.js        # User roles schema
-│   ├── taskModel.js        # Task schema
-│   ├── taskStatusMapModel.js # Task status mapping
-│   ├── taskStatusModel.js  # Task status schema
-│   └── userModel.js        # User schema
-├── routes/                 # Route definitions
-│   ├── adminRoutes.js      # Admin routes
-│   ├── taskRoutes.js       # Task management routes
-│   ├── taskStatusRoutes.js # Task status routes
-│   └── userRoutes.js       # User authentication routes
-├── services/               # Business logic services
-│   └── googlePubSub.js     # Google Pub/Sub integration
-├── utils/                  # Utility functions
-│   ├── cache.js            # Cache management
-│   └── helper.js           # Common utilities
-├── app.js                 # Express application setup
-└── db.js                  # Database connection
+├── config/                          
+│   └── nodejs-pub-sub.json          
+├── controllers/                     
+│   ├── adminController.js           
+│   ├── taskController.js            
+│   ├── taskStatusController.js      
+│   └── userController.js            
+├── emailTemplate/                   
+│   ├── reminderEmail.html           
+│   └── sendEmail.html              
+├── helper/                 
+│   └── helper.js           
+├── middleware/             
+│   ├── authMiddleware.js   
+│   ├── rateLimiter.js      
+│   └── validation.js       
+├── models/                 
+│   ├── permissionModel.js  
+│   ├── roleModel.js        
+│   ├── taskModel.js        
+│   ├── taskStatusMapModel.js 
+│   ├── taskStatusModel.js  
+│   └── userModel.js       
+├── routes/                 
+│   ├── adminRoutes.js      
+│   ├── taskRoutes.js       
+│   ├── taskStatusRoutes.js 
+│   └── userRoutes.js       
+├── services/               
+│   └── googlePubSub.js     
+├── utils/                  
+│   ├── cache.js            
+│   └── helper.js           
+├── app.js                 
+└── db.js                  
 
 ```
 
@@ -117,7 +116,6 @@ PUBSUB_TOPIC=your-topic-name
 
 # Rate Limiting
 RATE_LIMIT_WINDOW_MS=15*60*1000  # 15 minutes
-RATE_LIMIT_MAX=100  # limit each IP to 100 requests per windowMs
 ```
 
 ---
@@ -171,12 +169,6 @@ The API returns appropriate HTTP status codes and JSON responses:
 - `404 Not Found` 
 - `429 Too Many Requests` 
 - `500 Internal Server Error` 
-
----
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
