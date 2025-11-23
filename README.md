@@ -46,6 +46,7 @@ It supports user management, task creation, status updates, and automated remind
 
 ## Project Structure
 
+```text
 src/
 ├── config/                 # Configuration files
 │   └── nodejs-pub-sub.json # Google Cloud Pub/Sub configuration
@@ -82,6 +83,8 @@ src/
 │   └── helper.js           # Common utilities
 ├── app.js                 # Express application setup
 └── db.js                  # Database connection
+
+```
 
 ---
 
@@ -156,7 +159,7 @@ DELETE /task/delete/:id
 Authorization: Bearer <jwt_token>
 ```
 
-## Error Handling
+#### Error Handling
 
 The API returns appropriate HTTP status codes and JSON responses:
 
