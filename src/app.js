@@ -4,7 +4,7 @@ require("dotenv").config({ path: path.resolve(__dirname, "../.env") });
 const express = require("express");
 const rateLimit = require("./middleware/rateLimiter");
 
-require("./db");
+require("./config/db");
 
 const { startTaskReminderJob } = require("./utils/taskReminder");
 const { listenMessage } = require("./services/googlePubSub");
