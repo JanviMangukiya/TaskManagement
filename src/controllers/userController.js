@@ -3,8 +3,9 @@ const User = require('../models/userModel');
 const Role = require('../models/roleModel');
 const Permission = require('../models/permissionModel');
 const { successHandle, errorHandle } = require('../helper/helper');
-require('dotenv').config();
+const cache = require('../utils/cache');
 
+// register
 const register = async (req, res) => {
     try {
         const { firstName, lastName, birthDate, email, contact, password, role } = req.body;
@@ -53,8 +54,9 @@ const register = async (req, res) => {
     } catch (error) {
         return errorHandle('', res, "User Registration Failed", 500, error.message);
     }
-}
+};
 
+// login
 const login = async (req, res) => {
     try {
         const { userName, password } = req.body;
@@ -91,8 +93,107 @@ const login = async (req, res) => {
     } catch (error) {
         return errorHandle('', res, "Error in Login", 401, error.message);
     }
-}
+};
 
+// get all users
+const getAllUsers = async (req, res) => {
+    try {
+        const users = await User.find({ isDeleted: false }).select("-password");
+        return successHandle('', res, "Users Retrieved Successfully", 200, users);
+    } catch (error) {
+        return errorHandle('', res, "Error Retrieving Users", 500, error.message);
+    }
+};
+
+// get user by id
+const getIdByUser = async (req, res) => {
+    const { id } = req.params;
+    // make a cache key from the URL params
+    const cacheKey = `user:${JSON.stringify(id)}`;
+    const cacheData = cache.get(cacheKey);
+    if (cacheData) {
+        return successHandle('', res, "User Retrieved Successfully (Cache)", 200, cacheData);
+    }
+    try {
+        const user = await User.findById(id).select("-password");
+        cache.set(cacheKey, user);
+        if (!user) {
+            return errorHandle('', res, "User Not Found", 404, '');
+        }
+        return successHandle('', res, "User Retrieved Successfully", 200, user);
+    } catch (error) {
+        return errorHandle('', res, "Error Retrieving User", 500, error.message);
+    }
+};
+
+// update user
+const updateUser = async (req, res) => {
+    cache.keys((err, keys) => {
+        if (!err) {
+            // find all keys that start with "users:"
+            const userKeys = keys.filter(key => key.startsWith('users:'));
+            if (userKeys.length) {
+                cache.del(userKeys);
+            }
+        }
+    });
+    try {
+        const { id } = req.params;
+        const updateData = req.body;
+
+        if (updateData.role) {
+            try {
+                const roles = await Role.findOne({ roleName: updateData.role });
+                if (!roles) {
+                    return errorHandle('', res, "Invalid Role", 400, '');
+                }
+                updateData.role = roles.id;
+            } catch (error) {
+                return errorHandle('', res, "Error Updating User", 500, error.message);
+            }
+        }
+        try {
+            const updatedUser = await User.findByIdAndUpdate(id, updateData);
+            if (!updatedUser) {
+                return errorHandle('', res, "User Not Found", 404, '');
+            }
+            return successHandle('', res, "User Updated Successfully", 200, updatedUser);
+        } catch (error) {
+            return errorHandle('', res, "Error Updating User", 500, error.message);
+        }
+    } catch (error) {
+        return errorHandle('', res, "Error Updating User", 500, error.message);
+    }
+};
+
+// delete user
+const deleteUser = async (req, res) => {
+    cache.keys((err, keys) => {
+        if (!err) {
+            // find all keys that start with "users:"
+            const userKeys = keys.filter(key => key.startsWith('users:'));
+            if (userKeys.length) {
+                cache.del(userKeys);
+            }
+        }
+    });
+    try {
+        const { id } = req.params;
+        try {
+            const users = await User.findByIdAndUpdate(id, { isDeleted: true });
+            if (!users) {
+                return errorHandle('', res, "User Not Found", 404, '');
+            }
+            return successHandle('', res, "User Deleted Successfully", 204, '');
+        } catch (error) {
+            return errorHandle('', res, "Error Deleting User", 500, error.message);
+        }
+    } catch (error) {
+        return errorHandle('', res, "Error Deleting User", 500, error.message);
+    }
+};
+
+// create role
 const createRole = async (req, res) => {
     const { roleName, permissions } = req.body;
     try {
@@ -111,6 +212,7 @@ const createRole = async (req, res) => {
     }
 };
 
+// create permission
 const createPermission = async (req, res) => {
     const { permissionName, description } = req.body;
     try {
@@ -124,4 +226,4 @@ const createPermission = async (req, res) => {
     }
 };
 
-module.exports = { register, login, createRole, createPermission };
+module.exports = { register, login, getAllUsers, getIdByUser, updateUser, deleteUser, createRole, createPermission };

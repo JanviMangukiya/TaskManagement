@@ -9,7 +9,6 @@ require("./config/db");
 const { startTaskReminderJob } = require("./utils/taskReminder");
 const { listenMessage } = require("./services/googlePubSub");
 
-const adminRouter = require("./routes/adminRoutes");
 const userRouter = require("./routes/userRoutes");
 const taskRouter = require("./routes/taskRoutes");
 const taskStatusRouter = require("./routes/taskStatusRoutes");
@@ -23,7 +22,6 @@ app.use(express.json());
 startTaskReminderJob();
 listenMessage("UserCreation-sub");
 
-app.use("/admin", adminRouter);
 app.use("/user", userRouter);
 app.use("/task", taskRouter);
 app.use("/status", taskStatusRouter);
