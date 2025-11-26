@@ -24,7 +24,6 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
  * @param {string} req.body.comment - Comment for the task (Optional)
  * @param {string} req.body.assignDate - Assign date of the task
  * @param {string} req.body.dueDate - Deadline of the task
- * 
  * @param {Response} res - Response object 
  */
 const createTask = async (req, res) => {
@@ -168,7 +167,6 @@ const createTask = async (req, res) => {
  * @param {number} req.query.page - Page number
  * @param {string} req.query.searchObj - Search filtering
  * @param {string} req.query.sortObj - Sort filtering
- * 
  * @param {Response} res - Response object
  */
 const getAllTasks = async (req, res) => {
@@ -302,8 +300,7 @@ const getAllTasks = async (req, res) => {
 /**
  * Get task by ID
  * @param {Request} req - Request object
- * @param {string} req.params.id - Task ID
- * 
+ * @param {string} req.params.id - Task ID 
  * @param {Response} res - Response object
  */
 const getByIdTask = async (req, res) => {
@@ -368,7 +365,6 @@ const getByIdTask = async (req, res) => {
  * @param {string} req.body.userId - User ID who comments
  * @param {string} req.body.assignDate - Update task assign date
  * @param {string} req.body.dueDate - Update task due date
- * 
  * @param {Response} res - Response object
  */
 const updateTask = async (req, res) => {
@@ -410,7 +406,6 @@ const updateTask = async (req, res) => {
  * @param {Request} req - Request object
  * @param {string} req.params.id - Task ID
  * @param {string} req.body.statusId - Update task status or Add new status
- * 
  * @param {Response} res - 
  */
 const updateTaskStatus = async (req, res) => {
@@ -462,7 +457,6 @@ const updateTaskStatus = async (req, res) => {
  * 
  * @param {Request} req - Request object
  * @param {string} req.params.id - Task ID
- * 
  * @param {Response} res - Response object
  */
 const getTaskStatusHistory = async (req, res) => {
@@ -497,7 +491,6 @@ const getTaskStatusHistory = async (req, res) => {
  * 
  * @param {Request} req - Request object
  * @param {string} req.params.id - Task ID
- * 
  * @param {Response} res - Response object
  */
 const deleteTask = async (req, res) => {
@@ -529,7 +522,6 @@ const deleteTask = async (req, res) => {
  * @param {Request} req - Request object
  * @param {string} req.params.id - Task ID
  * @param {string} req.body.userId - User ID who likes the task
- * 
  * @param {Response} res - Response object
  */
 const addIsLikedTask = async (req, res) => {
@@ -568,8 +560,7 @@ const addIsLikedTask = async (req, res) => {
  * 
  * @param {Request} req - Request object
  * @param {string} req.params.id - Comment ID
- * @param {string} req.body.userId - User ID who likes the comment
- * 
+ * @param {string} req.body.userId - User ID who likes the comment 
  * @param {Response} res - Response object
  */
 const addIsLikedComment = async (req, res) => {
@@ -608,7 +599,6 @@ const addIsLikedComment = async (req, res) => {
  * 
  * @param {Request} req - Request object
  * @param {string} req.query.priority - Priority of the task
- * 
  * @param {Response} res - Response object
  */
 const filterByPriority = async (req, res) => {

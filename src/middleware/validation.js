@@ -74,7 +74,6 @@ const validationTask = ((req, res, next) => {
     if (!taskName || !description || !priority || !userId || !assignDate || !dueDate) {
         return errorHandle('', res, "All Fields are Required", 400, '');
     }
-
     next();
 });
 

@@ -54,6 +54,7 @@ const listenMessage = async (subscriptionName) => {
           htmlBody = htmlBody
             .replace("{taskName}", data[i].taskName)
             .replace("{dueDate}", data[i].dueDate);
+            
           try {
             await sendEmail(data[i].email, "Task Due Tomorrow", htmlBody);
           } catch (error) {

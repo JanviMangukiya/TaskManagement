@@ -42,6 +42,7 @@ const checkAndSendReminders = async () => {
           taskName: task?.taskName,
           dueDate: task?.dueDate,
         }));
+        
       try {
         // Publish task data to PubSub
         await publishMessage("UserCreation", data);

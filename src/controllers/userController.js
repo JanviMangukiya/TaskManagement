@@ -17,7 +17,6 @@ import { successHandle, errorHandle } from '../helper/helper.js';
  * @param {string} req.body.contact - Contact of the user
  * @param {string} req.body.password - Password of the user
  * @param {string} req.body.role - Role of the user
- * 
  * @param {Response} res - Response object
  */
 const register = async (req, res) => {
@@ -142,7 +141,6 @@ const getAllUsers = async (req, res) => {
  * 
  * @param {Request} req - Request object
  * @param {string} req.params.id - User ID
- * 
  * @param {Response} res - Response object
  */
 const getIdByUser = async (req, res) => {
@@ -171,7 +169,6 @@ const getIdByUser = async (req, res) => {
  * @param {Request} req - Request object
  * @param {string} req.params.id - User ID
  * @param {Object} req.body - User data to update
- * 
  * @param {Response} res - Response object
  */
 const updateUser = async (req, res) => {
@@ -219,7 +216,6 @@ const updateUser = async (req, res) => {
  * 
  * @param {Request} req - Request object
  * @param {string} req.params.id - User ID
- * 
  * @param {Response} res - Response object
  */
 const deleteUser = async (req, res) => {
@@ -254,7 +250,6 @@ const deleteUser = async (req, res) => {
  * @param {Request} req - Request object
  * @param {string} req.body.roleName - Role name
  * @param {Array} req.body.permissions - Permissions for the role
- * 
  * @param {Response} res - Response object
  */
 const createRole = async (req, res) => {
@@ -281,7 +276,6 @@ const createRole = async (req, res) => {
  * @param {Request} req - Request object
  * @param {string} req.body.permissionName - Permission name
  * @param {string} req.body.description - Permission description
- * 
  * @param {Response} res - Response object
  */
 const createPermission = async (req, res) => {
