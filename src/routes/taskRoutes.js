@@ -1,6 +1,7 @@
-const express = require("express");
+import express from 'express';
 const app = express.Router();
-const {
+
+import {
   createTask,
   getAllTasks,
   getByIdTask,
@@ -11,9 +12,10 @@ const {
   getTaskStatusHistory,
   deleteTask,
   filterByPriority,
-} = require("../controllers/taskController");
-const { verifyToken, checkRole } = require("../middleware/authMiddleware");
-const { validationTask } = require("../middleware/validation");
+} from '../controllers/taskController.js';
+
+import { verifyToken, checkRole } from '../middleware/authMiddleware.js';
+import { validationTask } from '../middleware/validation.js';
 
 app.post("/add", verifyToken, checkRole("Admin"), validationTask, createTask);
 
@@ -40,4 +42,4 @@ app.get(
 
 app.delete("/delete/:id", verifyToken, checkRole("Admin"), deleteTask);
 
-module.exports = app;
+export default app;

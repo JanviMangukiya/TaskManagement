@@ -1,6 +1,6 @@
-const jwt = require('jsonwebtoken');
-const { errorHandle } = require('../helper/helper');
-const Role = require('../models/roleModel');
+import jwt from 'jsonwebtoken';
+import { errorHandle } from '../helper/helper.js';
+import Role from '../models/roleModel.js';
 
 function verifyToken(req, res, next) {
     let token = req.headers['authorization'];
@@ -41,4 +41,4 @@ function checkRole(allowedRoles) {
     };
 }
 
-module.exports = { verifyToken, checkRole }
+export { verifyToken, checkRole };

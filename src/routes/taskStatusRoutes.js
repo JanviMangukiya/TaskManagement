@@ -1,9 +1,10 @@
-const express = require('express');
+import express from 'express';
 const app = express.Router();
-const { createStatus } = require('../controllers/taskStatusController');
-const { verifyToken, checkRole } = require('../middleware/authMiddleware');
-const { validationStatus } = require('../middleware/validation');
+
+import createStatus from '../controllers/taskStatusController.js';
+import { verifyToken, checkRole } from '../middleware/authMiddleware.js';
+import { validationStatus } from '../middleware/validation.js';
 
 app.post('/add', verifyToken, checkRole('Admin'), validationStatus, createStatus);
 
-module.exports = app;
+export default app;

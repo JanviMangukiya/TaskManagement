@@ -1,8 +1,8 @@
-const express = require('express');
+import express from 'express';
 const app = express.Router();
-const { register, login, getAllUsers, getIdByUser, updateUser, deleteUser, createRole, createPermission } = require('../controllers/userController');
-const { validationRegister, validationLogin } = require('../middleware/validation');
-const { verifyToken, checkRole } = require('../middleware/authMiddleware');
+import { register, login, getAllUsers, getIdByUser, updateUser, deleteUser, createRole, createPermission } from '../controllers/userController.js';
+import { validationRegister, validationLogin } from '../middleware/validation.js';
+import { verifyToken, checkRole } from '../middleware/authMiddleware.js';
 
 app.post('/register', validationRegister, register);
 
@@ -20,4 +20,4 @@ app.post('/role', verifyToken, checkRole('Admin'), createRole);
 
 app.post('/permission', verifyToken, checkRole('Admin'), createPermission);
 
-module.exports = app;   
+export default app;

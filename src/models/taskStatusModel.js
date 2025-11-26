@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const taskStatusSchema = new mongoose.Schema({
     statusName: {
@@ -10,5 +10,4 @@ const taskStatusSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 const TaskStatus = mongoose.model('TaskStatus', taskStatusSchema);
-
-module.exports = TaskStatus;
+export default TaskStatus;

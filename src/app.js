@@ -1,21 +1,26 @@
-const path = require("path");
-require("dotenv").config({ path: path.resolve(__dirname, "../.env") });
+import path from 'path';
+import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
 
-const express = require("express");
-const rateLimit = require("./middleware/rateLimiter");
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
-require("./config/db");
+import express from 'express';
+import rateLimit from './middleware/rateLimiter.js';
 
-const { startTaskReminderJob } = require("./utils/taskReminder");
-const { listenMessage } = require("./services/googlePubSub");
+import connectDB from './config/db.js';
 
-const userRouter = require("./routes/userRoutes");
-const taskRouter = require("./routes/taskRoutes");
-const taskStatusRouter = require("./routes/taskStatusRoutes");
+import startTaskReminderJob from './utils/taskReminder.js';
+import listenMessage from './services/googlePubSub.js';
+
+import userRouter from './routes/userRoutes.js';
+import taskRouter from './routes/taskRoutes.js';
+import taskStatusRouter from './routes/taskStatusRoutes.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+connectDB();
 app.use(rateLimit);
 app.use(express.json());
 

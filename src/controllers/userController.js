@@ -1,9 +1,9 @@
-const jwt = require('jsonwebtoken');
-const User = require('../models/userModel');
-const Role = require('../models/roleModel');
-const Permission = require('../models/permissionModel');
-const { successHandle, errorHandle } = require('../helper/helper');
-const cache = require('../utils/cache');
+import jwt from 'jsonwebtoken';
+import User from '../models/userModel.js';
+import Role from '../models/roleModel.js';
+import Permission from '../models/permissionModel.js';
+import { successHandle, errorHandle } from '../helper/helper.js';
+import cache from '../utils/cache.js';
 
 // register
 const register = async (req, res) => {
@@ -226,4 +226,4 @@ const createPermission = async (req, res) => {
     }
 };
 
-module.exports = { register, login, getAllUsers, getIdByUser, updateUser, deleteUser, createRole, createPermission };
+export { register, login, getAllUsers, getIdByUser, updateUser, deleteUser, createRole, createPermission };

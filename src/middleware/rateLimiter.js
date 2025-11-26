@@ -1,4 +1,4 @@
-const rateLimit = require("express-rate-limit");
+import rateLimit from 'express-rate-limit';
 
 const limiter = rateLimit({
   windowMs: 1 * 60 * 1000,
@@ -6,4 +6,4 @@ const limiter = rateLimit({
   message: "Too Many Requests, Please Try Again After 1 Minute",
 });
 
-module.exports = limiter;
+export default limiter;

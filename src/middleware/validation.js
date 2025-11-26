@@ -1,4 +1,4 @@
-const { errorHandle } = require('../helper/helper');
+import { errorHandle } from '../helper/helper.js';
 
 const emailValid = /^[a-zA-Z0-9]+@[a-zA-Z0-9]+\.com$/;
 const numberValid = /^[0-9]{10}$/;
@@ -59,4 +59,4 @@ const validationStatus = ((req, res, next) => {
     next();
 });
 
-module.exports = { validationRegister, validationLogin, validationTask, validationStatus };
+export { validationRegister, validationLogin, validationTask, validationStatus };

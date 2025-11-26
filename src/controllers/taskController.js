@@ -1,11 +1,15 @@
-const fs = require("fs");
-const path = require("path");
-const Task = require("../models/taskModel");
-const User = require("../models/userModel");
-const TaskStatusMap = require("../models/taskStatusMapModel");
-const Comment = require("../models/commentModel");
-const { successHandle, errorHandle, sendEmail } = require("../helper/helper");
-const cache = require('../utils/cache');
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+import Task from "../models/taskModel.js";
+import User from "../models/userModel.js";
+import TaskStatusMap from "../models/taskStatusMapModel.js";
+import Comment from "../models/commentModel.js";
+import { successHandle, errorHandle, sendEmail } from "../helper/helper.js";
+import cache from "../utils/cache.js";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // create task
 const createTask = async (req, res) => {
@@ -48,9 +52,10 @@ const createTask = async (req, res) => {
         assignDate,
         dueDate,
       });
+
       if (comment) {
         try {
-          await Comment.create({
+          Comment.create({
             taskId: newTask.id,
             userId,
             comment,
@@ -212,17 +217,11 @@ const getAllTasks = async (req, res) => {
           options: { sort: { createdAt: -1 }, limit: 1 },
           populate: {
             path: "statusId",
-            select: "statusName"
+            select: "statusName",
           },
         });
     } catch (error) {
-      return errorHandle(
-        "",
-        res,
-        "Error Populating Task",
-        500,
-        error.message
-      );
+      return errorHandle("", res, "Error Populating Task", 500, error.message);
     }
 
     if (search?.name === "statusName") {
@@ -279,7 +278,13 @@ const getByIdTask = async (req, res) => {
   const cacheKey = `task:${JSON.stringify(id)}`;
   const cacheData = cache.get(cacheKey);
   if (cacheData) {
-    return successHandle('', res, "User Retrieved Successfully (Cache)", 200, cacheData);
+    return successHandle(
+      "",
+      res,
+      "User Retrieved Successfully (Cache)",
+      200,
+      cacheData
+    );
   }
   try {
     const task = await Task.findById(id).populate({
@@ -295,7 +300,7 @@ const getByIdTask = async (req, res) => {
       return errorHandle("", res, "Task not found", 404, "");
     }
 
-    // add commentCount and likedCount to each task 
+    // add commentCount and likedCount to each task
     const commentCount = await Comment.countDocuments({ taskId: task.id });
     const likedCount = task.likedBy.length;
     const taskWithCommentCount = {
@@ -320,7 +325,7 @@ const updateTask = async (req, res) => {
   cache.keys((err, keys) => {
     if (!err) {
       // find all keys that start with "task:"
-      const taskKeys = keys.filter(key => key.startsWith('task:'));
+      const taskKeys = keys.filter((key) => key.startsWith("task:"));
       if (taskKeys.length) {
         cache.del(taskKeys);
       }
@@ -331,32 +336,20 @@ const updateTask = async (req, res) => {
   const { comment, userId } = updateData;
   if (comment && userId) {
     try {
-      await Comment.create({
+      Comment.create({
         taskId: id,
         userId,
         comment,
       });
     } catch (error) {
-      return errorHandle(
-        "",
-        res,
-        "Error Updating Comment",
-        500,
-        error.message
-      );
+      return errorHandle("", res, "Error Updating Comment", 500, error.message);
     }
   }
   const updatedTask = await Task.findByIdAndUpdate(id, updateData);
   if (!updatedTask) {
     return errorHandle("", res, "Task Not Found", 404, "");
   }
-  return successHandle(
-    "",
-    res,
-    "Task Updated Successfully",
-    200,
-    updatedTask
-  );
+  return successHandle("", res, "Task Updated Successfully", 200, updatedTask);
 };
 
 // update task status
@@ -407,14 +400,16 @@ const getTaskStatusHistory = async (req, res) => {
   const { id } = req.params;
   try {
     const statusHistory = await TaskStatusMap.find({ taskId: id })
-      .populate({
-        path: "statusId",
-        select: "statusName",
-      })
-      .populate({
-        path: "taskId",
-        select: "taskName",
-      });
+      .populate([
+        {
+          path: "statusId",
+          select: "statusName",
+        },
+        {
+          path: "taskId",
+          select: "taskName",
+        },
+      ])
     return successHandle("", res, "Task Status History", 200, statusHistory);
   } catch (error) {
     return errorHandle(
@@ -432,7 +427,7 @@ const deleteTask = async (req, res) => {
   cache.keys((err, keys) => {
     if (!err) {
       // find all keys that start with "task:"
-      const taskKeys = keys.filter(key => key.startsWith('task:'));
+      const taskKeys = keys.filter((key) => key.startsWith("task:"));
       if (taskKeys.length) {
         cache.del(taskKeys);
       }
@@ -552,7 +547,7 @@ const filterByPriority = async (req, res) => {
   }
 };
 
-module.exports = {
+export {
   createTask,
   getAllTasks,
   getByIdTask,

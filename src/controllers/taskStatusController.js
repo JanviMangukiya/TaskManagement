@@ -1,5 +1,5 @@
-const TaskStatus = require('../models/taskStatusModel');
-const { successHandle, errorHandle } = require('../helper/helper');
+import TaskStatus from '../models/taskStatusModel.js';
+import { successHandle, errorHandle } from '../helper/helper.js';
 
 const createStatus = async (req, res) => {
     try {
@@ -23,4 +23,4 @@ const createStatus = async (req, res) => {
     }
 };
 
-module.exports = { createStatus };
+export default createStatus;

@@ -1,4 +1,6 @@
-const nodemailer = require("nodemailer");
+import nodemailer from 'nodemailer';
+import dotenv from "dotenv";
+dotenv.config({ path: "../.env" }); 
 
 const successHandle = (req, res, message, statusCode, data = {}) => {
   return res.status(statusCode).json({ message, data });
@@ -7,7 +9,6 @@ const successHandle = (req, res, message, statusCode, data = {}) => {
 const errorHandle = (req, res, message, statusCode, data = {}) => {
   return res.status(statusCode).json({ message, data });
 };
-
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -30,4 +31,4 @@ const sendEmail = async (to, subject, html) => {
   }
 };
 
-module.exports = { successHandle, errorHandle, sendEmail };
+export { successHandle, errorHandle, sendEmail };

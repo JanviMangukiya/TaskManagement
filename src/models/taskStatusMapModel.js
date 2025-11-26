@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const taskStatusMapSchema = new mongoose.Schema({
     taskId: {
@@ -13,4 +13,4 @@ const taskStatusMapSchema = new mongoose.Schema({
 
 const TaskStatusMap = mongoose.model('TaskStatusMap', taskStatusMapSchema);
 
-module.exports = TaskStatusMap;
+export default TaskStatusMap;

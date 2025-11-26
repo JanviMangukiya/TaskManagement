@@ -1,6 +1,6 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcrypt');
-require('./roleModel');
+import mongoose from 'mongoose';
+import bcrypt from 'bcrypt';
+import './roleModel.js';
 
 const userSchema = new mongoose.Schema({
     firstName: {
@@ -42,9 +42,9 @@ userSchema.pre("save", function (next) {
     }
 });
 
-userSchema.methods.comparePassword = async function(password) {
+userSchema.methods.comparePassword = async function (password) {
     return await bcrypt.compare(password, this.password);
 };
 
 const User = mongoose.model('User', userSchema);
-module.exports = User;
+export default User;

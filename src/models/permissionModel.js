@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const permissionSchema = new mongoose.Schema({
     permissionName: {
@@ -12,4 +12,4 @@ const permissionSchema = new mongoose.Schema({
 });
 
 const Permission = mongoose.model('Permission', permissionSchema);
-module.exports = Permission;
+export default Permission;
