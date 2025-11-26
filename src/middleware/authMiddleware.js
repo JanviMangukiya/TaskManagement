@@ -1,9 +1,17 @@
 import jwt from 'jsonwebtoken';
-import { errorHandle } from '../helper/helper.js';
 import Role from '../models/roleModel.js';
+import { errorHandle } from '../helper/helper.js';
 
+/**
+ * Middleware to verify JWT token
+ * 
+ * @param {Request} req -  Request object
+ * @param {Response} res - Response object
+ * @param {Function} next - Next middleware function
+ */
 function verifyToken(req, res, next) {
     let token = req.headers['authorization'];
+
     if (token && token.startsWith('Bearer ')) {
         token = token.slice(7);
     }
@@ -11,6 +19,7 @@ function verifyToken(req, res, next) {
         return errorHandle('', res, "Token Not Found", 404, '');
     }
     try {
+        // Verify the token with the secret key
         const decoded = jwt.verify(token, process.env.SECRET_KEY);
         req.user = decoded;
         req.user.role = decoded.role;
@@ -20,6 +29,11 @@ function verifyToken(req, res, next) {
     }
 }
 
+/**
+ * Middleware to check user role
+ * 
+ * @param {Array<string>} allowedRoles - List of allowed roles 
+ */
 function checkRole(allowedRoles) {
     return async (req, res, next) => {
         const { role } = req.user;

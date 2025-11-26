@@ -13,7 +13,6 @@ import {
   deleteTask,
   filterByPriority,
 } from '../controllers/taskController.js';
-
 import { verifyToken, checkRole } from '../middleware/authMiddleware.js';
 import { validationTask } from '../middleware/validation.js';
 

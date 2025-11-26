@@ -1,6 +1,16 @@
 import express from 'express';
 const app = express.Router();
-import { register, login, getAllUsers, getIdByUser, updateUser, deleteUser, createRole, createPermission } from '../controllers/userController.js';
+
+import {
+    register,
+    login,
+    getAllUsers,
+    getIdByUser,
+    updateUser,
+    deleteUser,
+    createRole,
+    createPermission
+} from '../controllers/userController.js';
 import { validationRegister, validationLogin } from '../middleware/validation.js';
 import { verifyToken, checkRole } from '../middleware/authMiddleware.js';
 

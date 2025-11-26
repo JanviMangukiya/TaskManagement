@@ -1,17 +1,29 @@
 import fs from 'fs';
 import path from 'path';
-import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
+
+import dotenv from 'dotenv';
 import { PubSub } from '@google-cloud/pubsub';
+
 import { sendEmail } from '../helper/helper.js';
+
+// Get current file directory
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+// Load environment variables
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
+// Initialize Pub/Sub client
 const pubSubClient = new PubSub({
   projectId: process.env.GOOGLE_PROJECT_ID,
   keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
 });
 
+/**
+ * Publish message to Pub/Sub topic
+ * 
+ * @param {string} topic - Topic name
+ * @param {object} message - Message data
+ */
 export const publishMessage = async (topic, message) => {
   try {
     const messageId = await pubSubClient
@@ -23,6 +35,11 @@ export const publishMessage = async (topic, message) => {
   }
 };
 
+/**
+ * Listen to Pub/Sub message and send email reminder
+ * 
+ * @param {string} subscriptionName - Subscription name
+ */
 const listenMessage = async (subscriptionName) => {
   try {
     const subscription = pubSubClient.subscription(subscriptionName);

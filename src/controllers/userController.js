@@ -1,14 +1,29 @@
 import jwt from 'jsonwebtoken';
+
 import User from '../models/userModel.js';
 import Role from '../models/roleModel.js';
 import Permission from '../models/permissionModel.js';
+import Cache from '../utils/cache.js';
 import { successHandle, errorHandle } from '../helper/helper.js';
-import cache from '../utils/cache.js';
 
-// register
+/**
+ * Register new user
+ * 
+ * @param {Request} req - Request object
+ * @param {string} req.body.firstName - First name of the user
+ * @param {string} req.body.lastName - Last name of the user
+ * @param {string} req.body.birthDate - Birth date of the user
+ * @param {string} req.body.email - Email of the user
+ * @param {string} req.body.contact - Contact of the user
+ * @param {string} req.body.password - Password of the user
+ * @param {string} req.body.role - Role of the user
+ * 
+ * @param {Response} res - Response object
+ */
 const register = async (req, res) => {
     try {
         const { firstName, lastName, birthDate, email, contact, password, role } = req.body;
+        // Check if email already exists
         try {
             const existingEmail = await User.findOne({ email });
             if (existingEmail) {
@@ -18,6 +33,7 @@ const register = async (req, res) => {
             return errorHandle('', res, "Not Found", 404, error.message);
         }
 
+        // Check if contact already exists
         try {
             const existingContact = await User.findOne({ contact });
             if (existingContact) {
@@ -38,6 +54,7 @@ const register = async (req, res) => {
         }
 
         try {
+            // Create user
             User.create({
                 firstName,
                 lastName,
@@ -56,12 +73,20 @@ const register = async (req, res) => {
     }
 };
 
-// login
+/**
+ * Login user
+ * 
+ * @param {Request} req - Request object
+ * @param {string} req.body.userName - User name (email or contact)
+ * @param {string} req.body.password - Password of the user
+ * @param {Response} res - Response object
+ */
 const login = async (req, res) => {
     try {
         const { userName, password } = req.body;
         let user;
         try {
+            // Find user by email or contact
             user = await User.findOne({
                 $or: [
                     { email: userName },
@@ -77,6 +102,7 @@ const login = async (req, res) => {
         }
 
         try {
+            // Compare password
             const isMatch = await user.comparePassword(password);
             if (!isMatch) {
                 return errorHandle('', res, "Invalid Password", 422, '');
@@ -84,6 +110,7 @@ const login = async (req, res) => {
         } catch (error) {
             return errorHandle('', res, "Somthing Went Wrong", 500, error.message);
         }
+        // Generate JWT token
         const token = jwt.sign(
             { id: user._id, role: user.role.toString() },
             process.env.SECRET_KEY,
@@ -95,7 +122,12 @@ const login = async (req, res) => {
     }
 };
 
-// get all users
+/**
+ * Get all users
+ * 
+ * @param {Request} req - Request object
+ * @param {Response} res - Response object
+ */
 const getAllUsers = async (req, res) => {
     try {
         const users = await User.find({ isDeleted: false }).select("-password");
@@ -105,18 +137,25 @@ const getAllUsers = async (req, res) => {
     }
 };
 
-// get user by id
+/**
+ * Get user by ID
+ * 
+ * @param {Request} req - Request object
+ * @param {string} req.params.id - User ID
+ * 
+ * @param {Response} res - Response object
+ */
 const getIdByUser = async (req, res) => {
     const { id } = req.params;
     // make a cache key from the URL params
     const cacheKey = `user:${JSON.stringify(id)}`;
-    const cacheData = cache.get(cacheKey);
+    const cacheData = Cache.get(cacheKey);
     if (cacheData) {
         return successHandle('', res, "User Retrieved Successfully (Cache)", 200, cacheData);
     }
     try {
         const user = await User.findById(id).select("-password");
-        cache.set(cacheKey, user);
+        Cache.set(cacheKey, user);
         if (!user) {
             return errorHandle('', res, "User Not Found", 404, '');
         }
@@ -126,14 +165,22 @@ const getIdByUser = async (req, res) => {
     }
 };
 
-// update user
+/**
+ * Update user
+ * 
+ * @param {Request} req - Request object
+ * @param {string} req.params.id - User ID
+ * @param {Object} req.body - User data to update
+ * 
+ * @param {Response} res - Response object
+ */
 const updateUser = async (req, res) => {
-    cache.keys((err, keys) => {
+    Cache.keys((err, keys) => {
         if (!err) {
-            // find all keys that start with "users:"
+            // find all keys that start with 'users:' and Clear cache
             const userKeys = keys.filter(key => key.startsWith('users:'));
             if (userKeys.length) {
-                cache.del(userKeys);
+                Cache.del(userKeys);
             }
         }
     });
@@ -141,6 +188,7 @@ const updateUser = async (req, res) => {
         const { id } = req.params;
         const updateData = req.body;
 
+        // Update role if provided
         if (updateData.role) {
             try {
                 const roles = await Role.findOne({ roleName: updateData.role });
@@ -166,14 +214,21 @@ const updateUser = async (req, res) => {
     }
 };
 
-// delete user
+/**
+ * Delete user (soft delete)
+ * 
+ * @param {Request} req - Request object
+ * @param {string} req.params.id - User ID
+ * 
+ * @param {Response} res - Response object
+ */
 const deleteUser = async (req, res) => {
-    cache.keys((err, keys) => {
+    Cache.keys((err, keys) => {
         if (!err) {
-            // find all keys that start with "users:"
+            // find all keys that start with 'users:' and Clear cache
             const userKeys = keys.filter(key => key.startsWith('users:'));
             if (userKeys.length) {
-                cache.del(userKeys);
+                Cache.del(userKeys);
             }
         }
     });
@@ -193,7 +248,15 @@ const deleteUser = async (req, res) => {
     }
 };
 
-// create role
+/**
+ * Create new role
+ * 
+ * @param {Request} req - Request object
+ * @param {string} req.body.roleName - Role name
+ * @param {Array} req.body.permissions - Permissions for the role
+ * 
+ * @param {Response} res - Response object
+ */
 const createRole = async (req, res) => {
     const { roleName, permissions } = req.body;
     try {
@@ -212,7 +275,15 @@ const createRole = async (req, res) => {
     }
 };
 
-// create permission
+/**
+ * Create new permission
+ * 
+ * @param {Request} req - Request object
+ * @param {string} req.body.permissionName - Permission name
+ * @param {string} req.body.description - Permission description
+ * 
+ * @param {Response} res - Response object
+ */
 const createPermission = async (req, res) => {
     const { permissionName, description } = req.body;
     try {

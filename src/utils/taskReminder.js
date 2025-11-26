@@ -3,6 +3,9 @@ import Task from '../models/taskModel.js';
 import { publishMessage } from '../services/googlePubSub.js';
 const batchSize = parseInt(process.env.BATCH_SIZE) || 100;
 
+/**
+ * Check for tasks due tomorrow and send email reminders
+ */
 const checkAndSendReminders = async () => {
   try {
     const today = new Date();
@@ -15,6 +18,7 @@ const checkAndSendReminders = async () => {
 
     let tasks;
     try {
+      // Get tasks due tomorrow
       tasks = await Task.find({
         dueDate: { $gte: startOfTomorrow, $lt: endOfTomorrow },
         isDeleted: false,
@@ -24,12 +28,12 @@ const checkAndSendReminders = async () => {
     }
 
     const totalTasks = tasks.length;
-    const chunkSize = Math.ceil(totalTasks / batchSize);
+    const chunkSize = Math.ceil(totalTasks / batchSize); // Split tasks into batches
 
     for (let i = 0; i < chunkSize; i++) {
       const startIndex = i * batchSize;
       const endIndex = startIndex + batchSize;
-      const batch = tasks.slice(startIndex, endIndex);
+      const batch = tasks.slice(startIndex, endIndex); // Get batch of tasks
 
       const data = batch
         .filter((task) => task?.userId?.email)
@@ -39,6 +43,7 @@ const checkAndSendReminders = async () => {
           dueDate: task?.dueDate,
         }));
       try {
+        // Publish task data to PubSub
         await publishMessage("UserCreation", data);
       } catch (error) {
         console.error("Error in Task Reminder", error.message);
@@ -49,6 +54,9 @@ const checkAndSendReminders = async () => {
   }
 };
 
+/**
+ * Schedule task reminder job every 5 seconds
+ */
 const startTaskReminderJob = () => {
   cron.schedule("*/5 * * * * *", async () => {
     checkAndSendReminders();

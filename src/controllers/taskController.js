@@ -1,17 +1,32 @@
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-import Task from "../models/taskModel.js";
-import User from "../models/userModel.js";
-import TaskStatusMap from "../models/taskStatusMapModel.js";
-import Comment from "../models/commentModel.js";
-import { successHandle, errorHandle, sendEmail } from "../helper/helper.js";
-import cache from "../utils/cache.js";
+import Comment from '../models/commentModel.js';
+import Task from '../models/taskModel.js';
+import TaskStatusMap from '../models/taskStatusMapModel.js';
+import User from '../models/userModel.js';
+import Cache from '../utils/cache.js';
+import { successHandle, errorHandle, sendEmail } from '../helper/helper.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// create task
+/**
+ * Create new task
+ * 
+ * @param {Request} req - Request object
+ * @param {string} req.body.taskName - Name of the task
+ * @param {string} req.body.description - Description of the task
+ * @param {string} req.body.priority - Priority of the task (Low, Medium, High)
+ * @param {string} req.body.category - Category of the task
+ * @param {string} req.body.userId - User ID of the task
+ * @param {string} req.body.statusId - Status ID of the task
+ * @param {string} req.body.comment - Comment for the task (Optional)
+ * @param {string} req.body.assignDate - Assign date of the task
+ * @param {string} req.body.dueDate - Deadline of the task
+ * 
+ * @param {Response} res - Response object 
+ */
 const createTask = async (req, res) => {
   try {
     const {
@@ -53,6 +68,7 @@ const createTask = async (req, res) => {
         dueDate,
       });
 
+      // Add comment
       if (comment) {
         try {
           Comment.create({
@@ -72,6 +88,7 @@ const createTask = async (req, res) => {
       }
 
       try {
+        // Create task status map
         const newStatusMap = await TaskStatusMap.create({
           taskId: newTask.id,
           statusId: statusId,
@@ -99,6 +116,7 @@ const createTask = async (req, res) => {
         );
       }
       try {
+        // Send email to user
         const user = await User.findById(userId);
         if (user?.email) {
           try {
@@ -142,9 +160,19 @@ const createTask = async (req, res) => {
   }
 };
 
+/**
+ * Get all tasks with pagination, search, sorting
+ * 
+ * @param {Request} req - Request object
+ * @param {number} req.query.limit - Number of items per page
+ * @param {number} req.query.page - Page number
+ * @param {string} req.query.searchObj - Search filtering
+ * @param {string} req.query.sortObj - Sort filtering
+ * 
+ * @param {Response} res - Response object
+ */
 const getAllTasks = async (req, res) => {
   try {
-    // pagination
     const limit = parseInt(req?.query?.limit || 5);
     const page = parseInt(req?.query?.page || 1);
     if (page < 1 || limit < 1) {
@@ -156,42 +184,41 @@ const getAllTasks = async (req, res) => {
         ""
       );
     }
-
     const offset = (page - 1) * limit;
+
     let filter = { isDeleted: false };
     let sortTask = {};
     let search = {};
-    const { searchObj, sortObj } = req.query;
 
-    if (searchObj) {
+    // Search
+    if (req.query.searchObj) {
       try {
-        search = JSON.parse(searchObj);
+        search = JSON.parse(req.query.searchObj);
+
         if (search.name === "isLiked") {
           filter[search.name] = search.value.toLowerCase() === "true";
         } else if (
-          search.name === "taskName" ||
-          search.name === "priority" ||
-          search.name === "category"
+          ["taskName", "priority", "category"].includes(search.name)
         ) {
           filter[search.name] = { $regex: search.value, $options: "i" };
-        }
-        if (search.name == "assignDate" || search.name == "dueDate") {
+        } else if (["assignDate", "dueDate"].includes(search.name)) {
           filter[search.name] = new Date(search.value);
         }
       } catch (error) {
         return errorHandle(
           "",
           res,
-          "Invalid Search Object",
+          "Invalid Search Object Properties",
           400,
           error.message
         );
       }
     }
 
-    if (sortObj) {
+    // Sorting
+    if (req.query.sortObj) {
       try {
-        const sort = JSON.parse(sortObj);
+        const sort = JSON.parse(req.query.sortObj);
         if (sort.name && sort.order) {
           sortTask[sort.name] = sort.order == "ASC" ? 1 : -1;
         } else {
@@ -207,7 +234,7 @@ const getAllTasks = async (req, res) => {
         return errorHandle("", res, "Invalid Sort Object", 400, error.message);
       }
     }
-    // fetch Tasks with status populated
+    // Fetch tasks with status populated
     let tasks;
     try {
       tasks = await Task.find(filter)
@@ -224,13 +251,14 @@ const getAllTasks = async (req, res) => {
       return errorHandle("", res, "Error Populating Task", 500, error.message);
     }
 
+    // Filter by status name
     if (search?.name === "statusName") {
       tasks = tasks.filter(
         (task) => task.status[0]?.statusId?.statusName === search.value
       );
     }
 
-    // aggregate totals
+    // Aggregate totals
     const totalTaskLiked = tasks.reduce(
       (total, task) => total + task?.likedBy?.length,
       0
@@ -240,17 +268,16 @@ const getAllTasks = async (req, res) => {
     const totalPage = Math.ceil(totalRecord / limit);
     tasks = tasks.slice(offset, offset + limit);
 
-    // add commentCount and likedCount to each task
+    // Add commentCount and likedCount to each task
     const commentCounts = await Promise.all(
       tasks.map(async (task) => {
         const commentCount = await Comment.countDocuments({
           taskId: task._id,
         });
-        const likedCount = task.likedBy.length;
         return {
           ...task.toObject(),
           commentCount: commentCount,
-          likedCount: likedCount,
+          likedCount: task.likedBy.length,
         };
       })
     );
@@ -272,11 +299,19 @@ const getAllTasks = async (req, res) => {
   }
 };
 
-// get task by id
+/**
+ * Get task by ID
+ * @param {Request} req - Request object
+ * @param {string} req.params.id - Task ID
+ * 
+ * @param {Response} res - Response object
+ */
 const getByIdTask = async (req, res) => {
   const { id } = req.params;
+
   const cacheKey = `task:${JSON.stringify(id)}`;
-  const cacheData = cache.get(cacheKey);
+  const cacheData = Cache.get(cacheKey);
+
   if (cacheData) {
     return successHandle(
       "",
@@ -286,6 +321,7 @@ const getByIdTask = async (req, res) => {
       cacheData
     );
   }
+
   try {
     const task = await Task.findById(id).populate({
       path: "status",
@@ -293,21 +329,22 @@ const getByIdTask = async (req, res) => {
       populate: {
         path: "statusId",
         select: "statusName",
-      },
+      }
     });
-    cache.set(cacheKey, task);
+
     if (!task) {
       return errorHandle("", res, "Task not found", 404, "");
     }
 
     // add commentCount and likedCount to each task
     const commentCount = await Comment.countDocuments({ taskId: task.id });
-    const likedCount = task.likedBy.length;
     const taskWithCommentCount = {
       ...task.toObject(),
       commentCount: commentCount,
-      likedCount: likedCount,
+      likedCount: task.likedBy.length,
     };
+
+    Cache.set(cacheKey, taskWithCommentCount);
     return successHandle(
       "",
       res,
@@ -320,31 +357,46 @@ const getByIdTask = async (req, res) => {
   }
 };
 
-// update task
+/**
+ * Update task
+ * @param {Request} req - Request object
+ * @param {string} req.params.id - Task ID
+ * @param {string} req.body.taskName - Update task name
+ * @param {string} req.body.priority - Update task priority
+ * @param {string} req.body.category - Update task category
+ * @param {string} req.body.comment - Update comment Or Add new comment
+ * @param {string} req.body.userId - User ID who comments
+ * @param {string} req.body.assignDate - Update task assign date
+ * @param {string} req.body.dueDate - Update task due date
+ * 
+ * @param {Response} res - Response object
+ */
 const updateTask = async (req, res) => {
-  cache.keys((err, keys) => {
+  Cache.keys((err, keys) => {
     if (!err) {
       // find all keys that start with "task:"
       const taskKeys = keys.filter((key) => key.startsWith("task:"));
       if (taskKeys.length) {
-        cache.del(taskKeys);
+        Cache.del(taskKeys);
       }
     }
   });
+
   const { id } = req.params;
   const updateData = { ...req.body };
-  const { comment, userId } = updateData;
-  if (comment && userId) {
+
+  if (updateData.comment && updateData.userId) {
     try {
       Comment.create({
         taskId: id,
-        userId,
-        comment,
+        userId: updateData.userId,
+        comment: updateData.comment,
       });
     } catch (error) {
       return errorHandle("", res, "Error Updating Comment", 500, error.message);
     }
   }
+
   const updatedTask = await Task.findByIdAndUpdate(id, updateData);
   if (!updatedTask) {
     return errorHandle("", res, "Task Not Found", 404, "");
@@ -352,15 +404,25 @@ const updateTask = async (req, res) => {
   return successHandle("", res, "Task Updated Successfully", 200, updatedTask);
 };
 
-// update task status
+/**
+ * Update task status
+ * 
+ * @param {Request} req - Request object
+ * @param {string} req.params.id - Task ID
+ * @param {string} req.body.statusId - Update task status or Add new status
+ * 
+ * @param {Response} res - 
+ */
 const updateTaskStatus = async (req, res) => {
   const { id } = req.params;
   const { statusId } = req.body;
+
   try {
     const updatedStatus = await TaskStatusMap.create({
       taskId: id,
       statusId,
     });
+
     try {
       await Task.findByIdAndUpdate(id, {
         $push: { status: updatedStatus },
@@ -395,9 +457,17 @@ const updateTaskStatus = async (req, res) => {
   }
 };
 
-// get task status history
+/**
+ * Get task status history
+ * 
+ * @param {Request} req - Request object
+ * @param {string} req.params.id - Task ID
+ * 
+ * @param {Response} res - Response object
+ */
 const getTaskStatusHistory = async (req, res) => {
   const { id } = req.params;
+
   try {
     const statusHistory = await TaskStatusMap.find({ taskId: id })
       .populate([
@@ -422,17 +492,25 @@ const getTaskStatusHistory = async (req, res) => {
   }
 };
 
-// delete task
+/**
+ * Delete task(soft delete)
+ * 
+ * @param {Request} req - Request object
+ * @param {string} req.params.id - Task ID
+ * 
+ * @param {Response} res - Response object
+ */
 const deleteTask = async (req, res) => {
-  cache.keys((err, keys) => {
+  Cache.keys((err, keys) => {
     if (!err) {
       // find all keys that start with "task:"
       const taskKeys = keys.filter((key) => key.startsWith("task:"));
       if (taskKeys.length) {
-        cache.del(taskKeys);
+        Cache.del(taskKeys);
       }
     }
   });
+
   const { id } = req.params;
   try {
     const deletedTask = await Task.findByIdAndUpdate(id, { isDeleted: true });
@@ -445,11 +523,20 @@ const deleteTask = async (req, res) => {
   }
 };
 
-// add is liked task
+/**
+ * Like/Unlike task
+ * 
+ * @param {Request} req - Request object
+ * @param {string} req.params.id - Task ID
+ * @param {string} req.body.userId - User ID who likes the task
+ * 
+ * @param {Response} res - Response object
+ */
 const addIsLikedTask = async (req, res) => {
   const { id } = req.params;
   const { userId } = req.body;
   let task;
+
   try {
     task = await Task.findById(id);
     if (!task) {
@@ -467,6 +554,7 @@ const addIsLikedTask = async (req, res) => {
     task.isLiked = false;
     task.likedBy.pull(userId);
   }
+
   try {
     await task.save();
   } catch (error) {
@@ -475,11 +563,20 @@ const addIsLikedTask = async (req, res) => {
   return successHandle("", res, "Task Liked", 200, task);
 };
 
-// add is liked comment
+/**
+ * Like/Unlike comment
+ * 
+ * @param {Request} req - Request object
+ * @param {string} req.params.id - Comment ID
+ * @param {string} req.body.userId - User ID who likes the comment
+ * 
+ * @param {Response} res - Response object
+ */
 const addIsLikedComment = async (req, res) => {
   const { id } = req.params;
   const { userId } = req.body;
   let comment;
+
   try {
     comment = await Comment.findById(id);
     if (!comment) {
@@ -497,6 +594,7 @@ const addIsLikedComment = async (req, res) => {
     comment.isLiked = false;
     comment.likedBy.pull(userId);
   }
+
   try {
     await comment.save();
   } catch (error) {
@@ -505,12 +603,21 @@ const addIsLikedComment = async (req, res) => {
   return successHandle("", res, "Comment Liked", 200, comment);
 };
 
-// filter by priority
+/**
+ * Filter tasks by priority
+ * 
+ * @param {Request} req - Request object
+ * @param {string} req.query.priority - Priority of the task
+ * 
+ * @param {Response} res - Response object
+ */
 const filterByPriority = async (req, res) => {
   const { priority } = req.query;
+
   if (!priority) {
     return errorHandle("", res, "Priority is Required", 400, "");
   }
+
   const pipeline = [
     {
       $match: {
@@ -539,6 +646,7 @@ const filterByPriority = async (req, res) => {
       },
     },
   ];
+
   try {
     const ans = await Task.aggregate(pipeline);
     return successHandle("", res, "Task Filtered Successfully", 200, ans);
