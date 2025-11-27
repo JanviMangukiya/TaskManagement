@@ -1,20 +1,20 @@
-import path from 'path';
-import { fileURLToPath } from 'url';
+import path from "path";
+import { fileURLToPath } from "url";
 
-import dotenv from 'dotenv';
-import express from 'express';
+import dotenv from "dotenv";
+import express from "express";
 
-import rateLimit from './middleware/rateLimiter.js';
-import connectDB from './config/db.js';
-import startTaskReminderJob from './utils/taskReminder.js';
-import listenMessage from './services/googlePubSub.js';
+import rateLimit from "./middleware/rateLimiter.js";
+import connectDB from "./config/db.js";
+import startTaskReminderJob from "./utils/taskReminder.js";
+import listenMessage from "./services/googlePubSub.js";
 
-import userRouter from './routes/userRoutes.js';
-import taskRouter from './routes/taskRoutes.js';
-import taskStatusRouter from './routes/taskStatusRoutes.js';
+import userRouter from "./routes/userRoutes.js";
+import taskRouter from "./routes/taskRoutes.js";
+import taskStatusRouter from "./routes/taskStatusRoutes.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 const app = express();
 const PORT = process.env.PORT || 3000;

@@ -1,4 +1,4 @@
-import express from 'express';
+import express from "express";
 const app = express.Router();
 
 import {
@@ -12,9 +12,9 @@ import {
   getTaskStatusHistory,
   deleteTask,
   filterByPriority,
-} from '../controllers/taskController.js';
-import { verifyToken, checkRole } from '../middleware/authMiddleware.js';
-import { validationTask } from '../middleware/validation.js';
+} from "../controllers/taskController.js";
+import { verifyToken, checkRole } from "../middleware/authMiddleware.js";
+import { validationTask } from "../middleware/validation.js";
 
 app.post("/add", verifyToken, checkRole("Admin"), validationTask, createTask);
 
@@ -36,7 +36,7 @@ app.get(
   "/statusHistory/:id",
   verifyToken,
   checkRole("Admin"),
-  getTaskStatusHistory
+  getTaskStatusHistory,
 );
 
 app.delete("/delete/:id", verifyToken, checkRole("Admin"), deleteTask);

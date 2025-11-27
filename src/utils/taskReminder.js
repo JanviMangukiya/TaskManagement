@@ -1,6 +1,6 @@
-import cron from 'node-cron';
-import Task from '../models/taskModel.js';
-import { publishMessage } from '../services/googlePubSub.js';
+import cron from "node-cron";
+import Task from "../models/taskModel.js";
+import { publishMessage } from "../services/googlePubSub.js";
 const batchSize = parseInt(process.env.BATCH_SIZE) || 100;
 
 /**
@@ -42,7 +42,7 @@ const checkAndSendReminders = async () => {
           taskName: task?.taskName,
           dueDate: task?.dueDate,
         }));
-        
+
       try {
         // Publish task data to PubSub
         await publishMessage("UserCreation", data);

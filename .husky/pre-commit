@@ -1,0 +1,4 @@
+#!/usr/bin/env sh
+
+echo "Husky is running!"
+npx lint-staged

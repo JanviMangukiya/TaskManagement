@@ -1,16 +1,19 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
-const taskStatusMapSchema = new mongoose.Schema({
+const taskStatusMapSchema = new mongoose.Schema(
+  {
     taskId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Task',    
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Task",
     },
     statusId: {
-        type: mongoose.Schema.Types.ObjectId,   
-        ref: 'TaskStatus',
-    }
-}, { timestamps: true } );
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "TaskStatus",
+    },
+  },
+  { timestamps: true },
+);
 
-const TaskStatusMap = mongoose.model('TaskStatusMap', taskStatusMapSchema);
+const TaskStatusMap = mongoose.model("TaskStatusMap", taskStatusMapSchema);
 
 export default TaskStatusMap;

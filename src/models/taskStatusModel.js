@@ -1,13 +1,16 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
-const taskStatusSchema = new mongoose.Schema({
+const taskStatusSchema = new mongoose.Schema(
+  {
     statusName: {
-        type: String,
-        enum: ['Pending', 'In Progress', 'Completed'],
-        default: 'Pending',
-        required: true
-    }
-}, { timestamps: true });
+      type: String,
+      enum: ["Pending", "In Progress", "Completed"],
+      default: "Pending",
+      required: true,
+    },
+  },
+  { timestamps: true },
+);
 
-const TaskStatus = mongoose.model('TaskStatus', taskStatusSchema);
+const TaskStatus = mongoose.model("TaskStatus", taskStatusSchema);
 export default TaskStatus;

@@ -1,14 +1,14 @@
-import jwt from 'jsonwebtoken';
+import jwt from "jsonwebtoken";
 
-import User from '../models/userModel.js';
-import Role from '../models/roleModel.js';
-import Permission from '../models/permissionModel.js';
-import Cache from '../utils/cache.js';
-import { successHandle, errorHandle } from '../helper/helper.js';
+import User from "../models/userModel.js";
+import Role from "../models/roleModel.js";
+import Permission from "../models/permissionModel.js";
+import Cache from "../utils/cache.js";
+import { successHandle, errorHandle } from "../helper/helper.js";
 
 /**
  * Register new user
- * 
+ *
  * @param {Request} req - Request object
  * @param {string} req.body.firstName - First name of the user
  * @param {string} req.body.lastName - Last name of the user
@@ -20,275 +20,306 @@ import { successHandle, errorHandle } from '../helper/helper.js';
  * @param {Response} res - Response object
  */
 const register = async (req, res) => {
+  try {
+    const { firstName, lastName, birthDate, email, contact, password, role } =
+      req.body;
+    // Check if email already exists
     try {
-        const { firstName, lastName, birthDate, email, contact, password, role } = req.body;
-        // Check if email already exists
-        try {
-            const existingEmail = await User.findOne({ email });
-            if (existingEmail) {
-                return errorHandle('', res, "Email is Already Register", 422, '');
-            }
-        } catch (error) {
-            return errorHandle('', res, "Not Found", 404, error.message);
-        }
-
-        // Check if contact already exists
-        try {
-            const existingContact = await User.findOne({ contact });
-            if (existingContact) {
-                return errorHandle('', res, "Contact is Already Register", 422, '');
-            }
-        } catch (error) {
-            return errorHandle('', res, "Not Found", 404, error.message);
-        }
-
-        let roles;
-        try {
-            roles = await Role.findOne({ roleName: role });
-            if (!roles) {
-                return errorHandle('', res, "Invalid Role Specified", 400, '');
-            }
-        } catch (error) {
-            return errorHandle('', res, "Failed to Fetch Role", 500, error.message);
-        }
-
-        try {
-            // Create user
-            User.create({
-                firstName,
-                lastName,
-                birthDate,
-                email,
-                contact,
-                password,
-                role: roles.id
-            });
-            return successHandle('', res, "User Registered Successfully", 201, '');
-        } catch (error) {
-            return errorHandle('', res, "Error in Registration", 500, error.message);
-        }
+      const existingEmail = await User.findOne({ email });
+      if (existingEmail) {
+        return errorHandle("", res, "Email is Already Register", 422, "");
+      }
     } catch (error) {
-        return errorHandle('', res, "User Registration Failed", 500, error.message);
+      return errorHandle("", res, "Not Found", 404, error.message);
     }
+
+    // Check if contact already exists
+    try {
+      const existingContact = await User.findOne({ contact });
+      if (existingContact) {
+        return errorHandle("", res, "Contact is Already Register", 422, "");
+      }
+    } catch (error) {
+      return errorHandle("", res, "Not Found", 404, error.message);
+    }
+
+    let roles;
+    try {
+      roles = await Role.findOne({ roleName: role });
+      if (!roles) {
+        return errorHandle("", res, "Invalid Role Specified", 400, "");
+      }
+    } catch (error) {
+      return errorHandle("", res, "Failed to Fetch Role", 500, error.message);
+    }
+
+    try {
+      // Create user
+      User.create({
+        firstName,
+        lastName,
+        birthDate,
+        email,
+        contact,
+        password,
+        role: roles.id,
+      });
+      return successHandle("", res, "User Registered Successfully", 201, "");
+    } catch (error) {
+      return errorHandle("", res, "Error in Registration", 500, error.message);
+    }
+  } catch (error) {
+    return errorHandle("", res, "User Registration Failed", 500, error.message);
+  }
 };
 
 /**
  * Login user
- * 
+ *
  * @param {Request} req - Request object
  * @param {string} req.body.userName - User name (email or contact)
  * @param {string} req.body.password - Password of the user
  * @param {Response} res - Response object
  */
 const login = async (req, res) => {
+  try {
+    const { userName, password } = req.body;
+    let user;
     try {
-        const { userName, password } = req.body;
-        let user;
-        try {
-            // Find user by email or contact
-            user = await User.findOne({
-                $or: [
-                    { email: userName },
-                    { contact: userName }
-                ]
-            });
+      // Find user by email or contact
+      user = await User.findOne({
+        $or: [{ email: userName }, { contact: userName }],
+      });
 
-            if (!user) {
-                return errorHandle('', res, "No Matching User Found", 404, '');
-            }
-        } catch (error) {
-            return errorHandle('', res, "User is Not Registered", 404, error.message);
-        }
-
-        try {
-            // Compare password
-            const isMatch = await user.comparePassword(password);
-            if (!isMatch) {
-                return errorHandle('', res, "Invalid Password", 422, '');
-            }
-        } catch (error) {
-            return errorHandle('', res, "Somthing Went Wrong", 500, error.message);
-        }
-        // Generate JWT token
-        const token = jwt.sign(
-            { id: user._id, role: user.role.toString() },
-            process.env.SECRET_KEY,
-            { expiresIn: '1h' }
-        );
-        return successHandle('', res, "Login Successfully", 200, token);
+      if (!user) {
+        return errorHandle("", res, "No Matching User Found", 404, "");
+      }
     } catch (error) {
-        return errorHandle('', res, "Error in Login", 401, error.message);
+      return errorHandle("", res, "User is Not Registered", 404, error.message);
     }
+
+    try {
+      // Compare password
+      const isMatch = await user.comparePassword(password);
+      if (!isMatch) {
+        return errorHandle("", res, "Invalid Password", 422, "");
+      }
+    } catch (error) {
+      return errorHandle("", res, "Somthing Went Wrong", 500, error.message);
+    }
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: user._id, role: user.role.toString() },
+      process.env.SECRET_KEY,
+      { expiresIn: "1h" },
+    );
+    return successHandle("", res, "Login Successfully", 200, token);
+  } catch (error) {
+    return errorHandle("", res, "Error in Login", 401, error.message);
+  }
 };
 
 /**
  * Get all users
- * 
+ *
  * @param {Request} req - Request object
  * @param {Response} res - Response object
  */
 const getAllUsers = async (req, res) => {
-    try {
-        const users = await User.find({ isDeleted: false }).select("-password");
-        return successHandle('', res, "Users Retrieved Successfully", 200, users);
-    } catch (error) {
-        return errorHandle('', res, "Error Retrieving Users", 500, error.message);
-    }
+  try {
+    const users = await User.find({ isDeleted: false }).select("-password");
+    return successHandle("", res, "Users Retrieved Successfully", 200, users);
+  } catch (error) {
+    return errorHandle("", res, "Error Retrieving Users", 500, error.message);
+  }
 };
 
 /**
  * Get user by ID
- * 
+ *
  * @param {Request} req - Request object
  * @param {string} req.params.id - User ID
  * @param {Response} res - Response object
  */
 const getIdByUser = async (req, res) => {
-    const { id } = req.params;
-    // make a cache key from the URL params
-    const cacheKey = `user:${JSON.stringify(id)}`;
-    const cacheData = Cache.get(cacheKey);
-    if (cacheData) {
-        return successHandle('', res, "User Retrieved Successfully (Cache)", 200, cacheData);
+  const { id } = req.params;
+  // make a cache key from the URL params
+  const cacheKey = `user:${JSON.stringify(id)}`;
+  const cacheData = Cache.get(cacheKey);
+  if (cacheData) {
+    return successHandle(
+      "",
+      res,
+      "User Retrieved Successfully (Cache)",
+      200,
+      cacheData,
+    );
+  }
+  try {
+    const user = await User.findById(id).select("-password");
+    Cache.set(cacheKey, user);
+    if (!user) {
+      return errorHandle("", res, "User Not Found", 404, "");
     }
-    try {
-        const user = await User.findById(id).select("-password");
-        Cache.set(cacheKey, user);
-        if (!user) {
-            return errorHandle('', res, "User Not Found", 404, '');
-        }
-        return successHandle('', res, "User Retrieved Successfully", 200, user);
-    } catch (error) {
-        return errorHandle('', res, "Error Retrieving User", 500, error.message);
-    }
+    return successHandle("", res, "User Retrieved Successfully", 200, user);
+  } catch (error) {
+    return errorHandle("", res, "Error Retrieving User", 500, error.message);
+  }
 };
 
 /**
  * Update user
- * 
+ *
  * @param {Request} req - Request object
  * @param {string} req.params.id - User ID
  * @param {Object} req.body - User data to update
  * @param {Response} res - Response object
  */
 const updateUser = async (req, res) => {
-    Cache.keys((err, keys) => {
-        if (!err) {
-            // find all keys that start with 'users:' and Clear cache
-            const userKeys = keys.filter(key => key.startsWith('users:'));
-            if (userKeys.length) {
-                Cache.del(userKeys);
-            }
-        }
-    });
-    try {
-        const { id } = req.params;
-        const updateData = req.body;
-
-        // Update role if provided
-        if (updateData.role) {
-            try {
-                const roles = await Role.findOne({ roleName: updateData.role });
-                if (!roles) {
-                    return errorHandle('', res, "Invalid Role", 400, '');
-                }
-                updateData.role = roles.id;
-            } catch (error) {
-                return errorHandle('', res, "Error Updating User", 500, error.message);
-            }
-        }
-        try {
-            const updatedUser = await User.findByIdAndUpdate(id, updateData);
-            if (!updatedUser) {
-                return errorHandle('', res, "User Not Found", 404, '');
-            }
-            return successHandle('', res, "User Updated Successfully", 200, updatedUser);
-        } catch (error) {
-            return errorHandle('', res, "Error Updating User", 500, error.message);
-        }
-    } catch (error) {
-        return errorHandle('', res, "Error Updating User", 500, error.message);
+  Cache.keys((err, keys) => {
+    if (!err) {
+      // find all keys that start with 'users:' and Clear cache
+      const userKeys = keys.filter((key) => key.startsWith("users:"));
+      if (userKeys.length) {
+        Cache.del(userKeys);
+      }
     }
+  });
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
+
+    // Update role if provided
+    if (updateData.role) {
+      try {
+        const roles = await Role.findOne({ roleName: updateData.role });
+        if (!roles) {
+          return errorHandle("", res, "Invalid Role", 400, "");
+        }
+        updateData.role = roles.id;
+      } catch (error) {
+        return errorHandle("", res, "Error Updating User", 500, error.message);
+      }
+    }
+    try {
+      const updatedUser = await User.findByIdAndUpdate(id, updateData);
+      if (!updatedUser) {
+        return errorHandle("", res, "User Not Found", 404, "");
+      }
+      return successHandle(
+        "",
+        res,
+        "User Updated Successfully",
+        200,
+        updatedUser,
+      );
+    } catch (error) {
+      return errorHandle("", res, "Error Updating User", 500, error.message);
+    }
+  } catch (error) {
+    return errorHandle("", res, "Error Updating User", 500, error.message);
+  }
 };
 
 /**
  * Delete user (soft delete)
- * 
+ *
  * @param {Request} req - Request object
  * @param {string} req.params.id - User ID
  * @param {Response} res - Response object
  */
 const deleteUser = async (req, res) => {
-    Cache.keys((err, keys) => {
-        if (!err) {
-            // find all keys that start with 'users:' and Clear cache
-            const userKeys = keys.filter(key => key.startsWith('users:'));
-            if (userKeys.length) {
-                Cache.del(userKeys);
-            }
-        }
-    });
-    try {
-        const { id } = req.params;
-        try {
-            const users = await User.findByIdAndUpdate(id, { isDeleted: true });
-            if (!users) {
-                return errorHandle('', res, "User Not Found", 404, '');
-            }
-            return successHandle('', res, "User Deleted Successfully", 204, '');
-        } catch (error) {
-            return errorHandle('', res, "Error Deleting User", 500, error.message);
-        }
-    } catch (error) {
-        return errorHandle('', res, "Error Deleting User", 500, error.message);
+  Cache.keys((err, keys) => {
+    if (!err) {
+      // find all keys that start with 'users:' and Clear cache
+      const userKeys = keys.filter((key) => key.startsWith("users:"));
+      if (userKeys.length) {
+        Cache.del(userKeys);
+      }
     }
+  });
+  try {
+    const { id } = req.params;
+    try {
+      const users = await User.findByIdAndUpdate(id, { isDeleted: true });
+      if (!users) {
+        return errorHandle("", res, "User Not Found", 404, "");
+      }
+      return successHandle("", res, "User Deleted Successfully", 204, "");
+    } catch (error) {
+      return errorHandle("", res, "Error Deleting User", 500, error.message);
+    }
+  } catch (error) {
+    return errorHandle("", res, "Error Deleting User", 500, error.message);
+  }
 };
 
 /**
  * Create new role
- * 
+ *
  * @param {Request} req - Request object
  * @param {string} req.body.roleName - Role name
  * @param {Array} req.body.permissions - Permissions for the role
  * @param {Response} res - Response object
  */
 const createRole = async (req, res) => {
-    const { roleName, permissions } = req.body;
-    try {
-        const existingRole = await Role.findOne({ roleName });
-        if (existingRole) {
-            return errorHandle('', res, "Role already exists", 422, '');
-        }
-        try {
-            const newRole = await Role.create({ roleName, permissions });
-            return successHandle('', res, "Add New Role Successfully", 201, newRole);
-        } catch (error) {
-            return errorHandle('', res, "Error in Creating Role", 500, error.message);
-        }
-    } catch (error) {
-        return errorHandle('', res, "Error in Creating Role", 500, error.message);
+  const { roleName, permissions } = req.body;
+  try {
+    const existingRole = await Role.findOne({ roleName });
+    if (existingRole) {
+      return errorHandle("", res, "Role already exists", 422, "");
     }
+    try {
+      const newRole = await Role.create({ roleName, permissions });
+      return successHandle("", res, "Add New Role Successfully", 201, newRole);
+    } catch (error) {
+      return errorHandle("", res, "Error in Creating Role", 500, error.message);
+    }
+  } catch (error) {
+    return errorHandle("", res, "Error in Creating Role", 500, error.message);
+  }
 };
 
 /**
  * Create new permission
- * 
+ *
  * @param {Request} req - Request object
  * @param {string} req.body.permissionName - Permission name
  * @param {string} req.body.description - Permission description
  * @param {Response} res - Response object
  */
 const createPermission = async (req, res) => {
-    const { permissionName, description } = req.body;
-    try {
-        const newPermission = await Permission.create({
-            permissionName,
-            description
-        });
-        return successHandle('', res, "Add New Permission Successfully", 201, newPermission);
-    } catch (error) {
-        return errorHandle('', res, "Error in Creating Permission", 500, error.message);
-    }
+  const { permissionName, description } = req.body;
+  try {
+    const newPermission = await Permission.create({
+      permissionName,
+      description,
+    });
+    return successHandle(
+      "",
+      res,
+      "Add New Permission Successfully",
+      201,
+      newPermission,
+    );
+  } catch (error) {
+    return errorHandle(
+      "",
+      res,
+      "Error in Creating Permission",
+      500,
+      error.message,
+    );
+  }
 };
 
-export { register, login, getAllUsers, getIdByUser, updateUser, deleteUser, createRole, createPermission };
+export {
+  register,
+  login,
+  getAllUsers,
+  getIdByUser,
+  updateUser,
+  deleteUser,
+  createRole,
+  createPermission,
+};

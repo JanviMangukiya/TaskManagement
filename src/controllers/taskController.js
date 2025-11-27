@@ -1,19 +1,19 @@
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
-import Comment from '../models/commentModel.js';
-import Task from '../models/taskModel.js';
-import TaskStatusMap from '../models/taskStatusMapModel.js';
-import User from '../models/userModel.js';
-import Cache from '../utils/cache.js';
-import { successHandle, errorHandle, sendEmail } from '../helper/helper.js';
+import Comment from "../models/commentModel.js";
+import Task from "../models/taskModel.js";
+import TaskStatusMap from "../models/taskStatusMapModel.js";
+import User from "../models/userModel.js";
+import Cache from "../utils/cache.js";
+import { successHandle, errorHandle, sendEmail } from "../helper/helper.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * Create new task
- * 
+ *
  * @param {Request} req - Request object
  * @param {string} req.body.taskName - Name of the task
  * @param {string} req.body.description - Description of the task
@@ -24,7 +24,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
  * @param {string} req.body.comment - Comment for the task (Optional)
  * @param {string} req.body.assignDate - Assign date of the task
  * @param {string} req.body.dueDate - Deadline of the task
- * @param {Response} res - Response object 
+ * @param {Response} res - Response object
  */
 const createTask = async (req, res) => {
   try {
@@ -51,7 +51,7 @@ const createTask = async (req, res) => {
         res,
         "Error Checking Existing Task",
         500,
-        error.message
+        error.message,
       );
     }
 
@@ -81,7 +81,7 @@ const createTask = async (req, res) => {
             res,
             "Error Creating Comment",
             500,
-            error.message
+            error.message,
           );
         }
       }
@@ -102,7 +102,7 @@ const createTask = async (req, res) => {
             res,
             "Error Updating Task Status Map",
             500,
-            error.message
+            error.message,
           );
         }
       } catch (error) {
@@ -111,7 +111,7 @@ const createTask = async (req, res) => {
           res,
           "Error Creating Task Status Map",
           500,
-          error.message
+          error.message,
         );
       }
       try {
@@ -121,7 +121,7 @@ const createTask = async (req, res) => {
           try {
             let htmlBody = fs.readFileSync(
               path.join(__dirname, "..", "emailTemplate", "sendEmail.html"),
-              "utf8"
+              "utf8",
             );
             htmlBody = htmlBody
               .replace("{taskName}", taskName)
@@ -134,7 +134,7 @@ const createTask = async (req, res) => {
                 res,
                 "Error Sending Email",
                 500,
-                error.message
+                error.message,
               );
             }
           } catch (error) {
@@ -143,7 +143,7 @@ const createTask = async (req, res) => {
               res,
               "Error Creating Task and Sending Email",
               500,
-              error.message
+              error.message,
             );
           }
         }
@@ -161,7 +161,7 @@ const createTask = async (req, res) => {
 
 /**
  * Get all tasks with pagination, search, sorting
- * 
+ *
  * @param {Request} req - Request object
  * @param {number} req.query.limit - Number of items per page
  * @param {number} req.query.page - Page number
@@ -179,7 +179,7 @@ const getAllTasks = async (req, res) => {
         res,
         "Page must be >= 1 and limit must be > 0",
         400,
-        ""
+        "",
       );
     }
     const offset = (page - 1) * limit;
@@ -195,9 +195,7 @@ const getAllTasks = async (req, res) => {
 
         if (search.name === "isLiked") {
           filter[search.name] = search.value.toLowerCase() === "true";
-        } else if (
-          ["taskName", "priority", "category"].includes(search.name)
-        ) {
+        } else if (["taskName", "priority", "category"].includes(search.name)) {
           filter[search.name] = { $regex: search.value, $options: "i" };
         } else if (["assignDate", "dueDate"].includes(search.name)) {
           filter[search.name] = new Date(search.value);
@@ -208,7 +206,7 @@ const getAllTasks = async (req, res) => {
           res,
           "Invalid Search Object Properties",
           400,
-          error.message
+          error.message,
         );
       }
     }
@@ -225,7 +223,7 @@ const getAllTasks = async (req, res) => {
             res,
             "Invalid Sort Object Properties",
             400,
-            error.message
+            "",
           );
         }
       } catch (error) {
@@ -252,14 +250,14 @@ const getAllTasks = async (req, res) => {
     // Filter by status name
     if (search?.name === "statusName") {
       tasks = tasks.filter(
-        (task) => task.status[0]?.statusId?.statusName === search.value
+        (task) => task.status[0]?.statusId?.statusName === search.value,
       );
     }
 
     // Aggregate totals
     const totalTaskLiked = tasks.reduce(
       (total, task) => total + task?.likedBy?.length,
-      0
+      0,
     );
     const totalTaskComment = tasks.filter((task) => task.comment).length;
     const totalRecord = tasks.length;
@@ -277,7 +275,7 @@ const getAllTasks = async (req, res) => {
           commentCount: commentCount,
           likedCount: task.likedBy.length,
         };
-      })
+      }),
     );
 
     const paginationInfo = {
@@ -300,7 +298,7 @@ const getAllTasks = async (req, res) => {
 /**
  * Get task by ID
  * @param {Request} req - Request object
- * @param {string} req.params.id - Task ID 
+ * @param {string} req.params.id - Task ID
  * @param {Response} res - Response object
  */
 const getByIdTask = async (req, res) => {
@@ -315,7 +313,7 @@ const getByIdTask = async (req, res) => {
       res,
       "User Retrieved Successfully (Cache)",
       200,
-      cacheData
+      cacheData,
     );
   }
 
@@ -326,7 +324,7 @@ const getByIdTask = async (req, res) => {
       populate: {
         path: "statusId",
         select: "statusName",
-      }
+      },
     });
 
     if (!task) {
@@ -347,7 +345,7 @@ const getByIdTask = async (req, res) => {
       res,
       "Tasks Retrieved Successfully",
       200,
-      taskWithCommentCount
+      taskWithCommentCount,
     );
   } catch (error) {
     return errorHandle("", res, "Error Retrieving Task", 500, error.message);
@@ -402,11 +400,11 @@ const updateTask = async (req, res) => {
 
 /**
  * Update task status
- * 
+ *
  * @param {Request} req - Request object
  * @param {string} req.params.id - Task ID
  * @param {string} req.body.statusId - Update task status or Add new status
- * @param {Response} res - 
+ * @param {Response} res -
  */
 const updateTaskStatus = async (req, res) => {
   const { id } = req.params;
@@ -428,7 +426,7 @@ const updateTaskStatus = async (req, res) => {
         res,
         "Error Updating Task Status",
         500,
-        error.message
+        error.message,
       );
     }
     if (!updatedStatus) {
@@ -439,7 +437,7 @@ const updateTaskStatus = async (req, res) => {
       res,
       "Task Status Updated Successfully",
       200,
-      updatedStatus
+      updatedStatus,
     );
   } catch (error) {
     return errorHandle(
@@ -447,14 +445,14 @@ const updateTaskStatus = async (req, res) => {
       res,
       "Error Updating Task Status",
       500,
-      error.message
+      error.message,
     );
   }
 };
 
 /**
  * Get task status history
- * 
+ *
  * @param {Request} req - Request object
  * @param {string} req.params.id - Task ID
  * @param {Response} res - Response object
@@ -463,17 +461,16 @@ const getTaskStatusHistory = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const statusHistory = await TaskStatusMap.find({ taskId: id })
-      .populate([
-        {
-          path: "statusId",
-          select: "statusName",
-        },
-        {
-          path: "taskId",
-          select: "taskName",
-        },
-      ])
+    const statusHistory = await TaskStatusMap.find({ taskId: id }).populate([
+      {
+        path: "statusId",
+        select: "statusName",
+      },
+      {
+        path: "taskId",
+        select: "taskName",
+      },
+    ]);
     return successHandle("", res, "Task Status History", 200, statusHistory);
   } catch (error) {
     return errorHandle(
@@ -481,14 +478,14 @@ const getTaskStatusHistory = async (req, res) => {
       res,
       "Error in Task Status History",
       500,
-      error.message
+      error.message,
     );
   }
 };
 
 /**
  * Delete task(soft delete)
- * 
+ *
  * @param {Request} req - Request object
  * @param {string} req.params.id - Task ID
  * @param {Response} res - Response object
@@ -518,7 +515,7 @@ const deleteTask = async (req, res) => {
 
 /**
  * Like/Unlike task
- * 
+ *
  * @param {Request} req - Request object
  * @param {string} req.params.id - Task ID
  * @param {string} req.body.userId - User ID who likes the task
@@ -557,10 +554,10 @@ const addIsLikedTask = async (req, res) => {
 
 /**
  * Like/Unlike comment
- * 
+ *
  * @param {Request} req - Request object
  * @param {string} req.params.id - Comment ID
- * @param {string} req.body.userId - User ID who likes the comment 
+ * @param {string} req.body.userId - User ID who likes the comment
  * @param {Response} res - Response object
  */
 const addIsLikedComment = async (req, res) => {
@@ -596,7 +593,7 @@ const addIsLikedComment = async (req, res) => {
 
 /**
  * Filter tasks by priority
- * 
+ *
  * @param {Request} req - Request object
  * @param {string} req.query.priority - Priority of the task
  * @param {Response} res - Response object
